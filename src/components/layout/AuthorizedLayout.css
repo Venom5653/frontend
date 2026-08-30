@@ -1,0 +1,107 @@
+/* =====================================================
+   LAYOUT
+   ===================================================== */
+
+.authorized-layout {
+    min-height: 100vh;
+
+    width: 100%;
+
+    position: relative;
+}
+
+
+/* =====================================================
+   CONTENT
+   ===================================================== */
+
+.authorized-content {
+    width: 100%;
+
+    min-height: 100vh;
+}
+
+
+/* =====================================================
+   NAVIGATION OPEN BUTTON
+   ===================================================== */
+
+.navigation-open-button {
+    position: fixed;
+
+    top: 18px;
+    left: 18px;
+
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #38264c;
+
+    border-radius: 11px;
+
+    background: rgba(25, 18, 36, 0.94);
+
+    color: #d8cce1;
+
+    font-size: 21px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    z-index: 9990;
+
+    box-shadow:
+            0 6px 20px rgba(0, 0, 0, 0.3);
+
+    backdrop-filter: blur(8px);
+
+    transition:
+            background 0.18s ease,
+            border-color 0.18s ease,
+            color 0.18s ease,
+            transform 0.18s ease,
+            box-shadow 0.18s ease;
+}
+
+
+.navigation-open-button:hover {
+    background: #30203f;
+
+    border-color: #5a397a;
+
+    color: #ffffff;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+            0 8px 25px rgba(0, 0, 0, 0.4),
+            0 0 15px rgba(124, 58, 237, 0.12);
+}
+
+
+.navigation-open-button:active {
+    transform: scale(0.96);
+}
+
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 600px) {
+
+    .navigation-open-button {
+        top: 12px;
+        left: 12px;
+
+        width: 42px;
+        height: 42px;
+    }
+
+}

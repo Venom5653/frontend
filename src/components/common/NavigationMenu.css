@@ -1,0 +1,891 @@
+/* =====================================================
+   OVERLAY
+   ===================================================== */
+
+.navigation-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.55);
+
+    backdrop-filter: blur(3px);
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    transition:
+            opacity 0.25s ease,
+            visibility 0.25s ease;
+
+    z-index: 9998;
+}
+
+
+.navigation-overlay.open {
+    opacity: 1;
+
+    visibility: visible;
+}
+
+
+/* =====================================================
+   MENU
+   ===================================================== */
+
+.navigation-menu {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 320px;
+
+    box-sizing: border-box;
+
+    background:
+            linear-gradient(
+                    180deg,
+                    #191124 0%,
+                    #110c18 100%
+            );
+
+    border-right: 1px solid #382354;
+
+    box-shadow:
+            15px 0 45px rgba(0, 0, 0, 0.45),
+            5px 0 25px rgba(124, 58, 237, 0.08);
+
+    transform: translateX(-105%);
+
+    transition:
+            transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+
+    z-index: 9999;
+
+    color: #f3f0f7;
+}
+
+
+.navigation-menu.open {
+    transform: translateX(0);
+}
+
+
+/* =====================================================
+   HEADER
+   ===================================================== */
+
+.navigation-header {
+    height: 75px;
+
+    padding: 0 20px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    border-bottom: 1px solid #30213e;
+}
+
+
+.navigation-title {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    font-size: 19px;
+
+    font-weight: 700;
+
+    color: #ffffff;
+}
+
+
+.navigation-title-icon {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: linear-gradient(
+            135deg,
+            #7c3aed,
+            #9333ea
+    );
+
+    color: white;
+
+    font-size: 17px;
+
+    box-shadow:
+            0 4px 14px rgba(124, 58, 237, 0.3);
+}
+
+
+/* =====================================================
+   CLOSE
+   ===================================================== */
+
+.navigation-close {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #38264c;
+
+    border-radius: 9px;
+
+    background: #21182d;
+
+    color: #a99bb3;
+
+    font-size: 24px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+            background 0.15s ease,
+            color 0.15s ease,
+            border-color 0.15s ease;
+}
+
+
+.navigation-close:hover {
+    background: #30203f;
+
+    border-color: #554168;
+
+    color: #ffffff;
+}
+
+
+/* =====================================================
+   LIST
+   ===================================================== */
+
+.navigation-list {
+    padding: 18px 12px;
+}
+
+
+/* =====================================================
+   ITEM
+   ===================================================== */
+
+.navigation-item {
+    width: 100%;
+
+    min-height: 72px;
+
+    margin-bottom: 8px;
+
+    padding: 12px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    border: 1px solid transparent;
+
+    border-radius: 13px;
+
+    background: transparent;
+
+    color: #c8bdcf;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+            background 0.18s ease,
+            border-color 0.18s ease,
+            color 0.18s ease,
+            transform 0.18s ease;
+}
+
+
+.navigation-item:hover {
+    background: rgba(124, 58, 237, 0.10);
+
+    border-color: #352248;
+
+    color: #ffffff;
+
+    transform: translateX(3px);
+}
+
+
+/* =====================================================
+   ACTIVE
+   ===================================================== */
+
+.navigation-item.active {
+    background:
+            linear-gradient(
+                    135deg,
+                    rgba(124, 58, 237, 0.20),
+                    rgba(147, 51, 234, 0.08)
+            );
+
+    border-color: #4b2c6b;
+
+    color: #ffffff;
+
+    box-shadow:
+            inset 3px 0 0 #7c3aed;
+}
+
+
+.navigation-item.active:hover {
+    transform: none;
+}
+
+
+/* =====================================================
+   ICON
+   ===================================================== */
+
+.navigation-item-icon {
+    width: 43px;
+    height: 43px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background: #241a30;
+
+    border: 1px solid #38264c;
+
+    color: #cbb8df;
+
+    font-size: 20px;
+
+    transition:
+            background 0.18s ease,
+            color 0.18s ease,
+            border-color 0.18s ease;
+}
+
+
+.navigation-item:hover .navigation-item-icon,
+.navigation-item.active .navigation-item-icon {
+    background: rgba(124, 58, 237, 0.20);
+
+    border-color: #5a397a;
+
+    color: #ffffff;
+}
+
+
+/* =====================================================
+   CONTENT
+   ===================================================== */
+
+.navigation-item-content {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+
+.navigation-item-title {
+    font-size: 15px;
+
+    font-weight: 600;
+
+    color: inherit;
+}
+
+
+.navigation-item-description {
+    font-size: 12px;
+
+    color: #80738c;
+
+    line-height: 1.3;
+}
+
+
+.navigation-item:hover .navigation-item-description,
+.navigation-item.active .navigation-item-description {
+    color: #a99bb4;
+}
+
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 600px) {
+
+    .navigation-menu {
+        width: min(320px, 88vw);
+    }
+
+}
+/* =====================================================
+   PROFILE
+   ===================================================== */
+
+.navigation-profile {
+
+    position: absolute;
+
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+
+    padding-top: 15px;
+
+    border-top: 1px solid #30213e;
+}
+
+
+/* =====================================================
+   PROFILE BUTTON
+   ===================================================== */
+
+.navigation-profile-button {
+
+    width: 100%;
+
+    min-height: 64px;
+
+    padding: 8px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    border: 1px solid transparent;
+
+    border-radius: 12px;
+
+    background: transparent;
+
+    color: #ffffff;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+            background 0.18s ease,
+            border-color 0.18s ease,
+            transform 0.18s ease;
+}
+
+
+.navigation-profile-button:hover {
+
+    background: rgba(124, 58, 237, 0.10);
+
+    border-color: #352248;
+
+    transform: translateX(2px);
+}
+
+
+/* =====================================================
+   PROFILE AVATAR
+   ===================================================== */
+
+.navigation-profile-avatar {
+
+    width: 46px;
+    height: 46px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    border-radius: 50%;
+
+    background:
+            linear-gradient(
+                    135deg,
+                    #7c3aed,
+                    #a855f7
+            );
+
+    border: 2px solid #4c2675;
+
+    box-shadow:
+            0 0 18px rgba(124, 58, 237, 0.25);
+
+    color: #ffffff;
+
+    font-size: 18px;
+
+    font-weight: 700;
+}
+
+
+.navigation-profile-avatar img {
+
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+
+/* =====================================================
+   PROFILE INFO
+   ===================================================== */
+
+.navigation-profile-info {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+
+/* =====================================================
+   NAME
+   ===================================================== */
+
+.navigation-profile-name {
+
+    max-width: 190px;
+
+    overflow: hidden;
+
+    color: #f4eff8;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+/* =====================================================
+   STATUS
+   ===================================================== */
+
+.navigation-profile-status {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color: #81758c;
+
+    font-size: 12px;
+
+    line-height: 1;
+}
+
+
+/* =====================================================
+   ONLINE DOT
+   ===================================================== */
+
+.navigation-status-dot {
+
+    width: 7px;
+    height: 7px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: #42d392;
+
+    box-shadow:
+            0 0 8px rgba(66, 211, 146, 0.45);
+}
+
+
+/* =====================================================
+   AVATAR ERROR
+   ===================================================== */
+
+.navigation-profile-avatar.avatar-error {
+
+    background:
+            linear-gradient(
+                    135deg,
+                    #7c3aed,
+                    #a855f7
+            );
+}
+
+
+/* =====================================================
+   MOBILE PROFILE
+   ===================================================== */
+
+@media (max-width: 600px) {
+
+    .navigation-profile {
+
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+    }
+
+
+    .navigation-profile-button {
+
+        min-height: 60px;
+    }
+
+
+    .navigation-profile-avatar {
+
+        width: 43px;
+        height: 43px;
+    }
+
+
+    .navigation-profile-name {
+
+        max-width: 170px;
+    }
+
+}
+/* =====================================================
+   PROFILE
+   ===================================================== */
+
+.navigation-profile {
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    padding: 14px 12px;
+
+    box-sizing: border-box;
+
+    border-top: 1px solid #30213e;
+
+    background:
+            linear-gradient(
+                    180deg,
+                    rgba(25, 17, 36, 0.96),
+                    rgba(17, 12, 24, 0.99)
+            );
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+/* =====================================================
+   PROFILE MAIN
+   ===================================================== */
+
+.navigation-profile-main {
+    min-width: 0;
+    flex: 1;
+
+    padding: 8px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    border: 1px solid transparent;
+
+    border-radius: 12px;
+
+    background: transparent;
+
+    color: #ffffff;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+            background 0.18s ease,
+            border-color 0.18s ease,
+            transform 0.18s ease;
+}
+
+
+.navigation-profile-main:hover {
+    background: rgba(124, 58, 237, 0.10);
+
+    border-color: #352248;
+
+    transform: translateY(-1px);
+}
+
+
+/* =====================================================
+   AVATAR
+   ===================================================== */
+
+.navigation-profile-avatar {
+    width: 43px;
+    height: 43px;
+
+    flex-shrink: 0;
+
+    overflow: hidden;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+            linear-gradient(
+                    135deg,
+                    #7c3aed,
+                    #a855f7
+            );
+
+    border: 2px solid #563078;
+
+    box-shadow:
+            0 0 18px rgba(124, 58, 237, 0.25);
+
+    color: white;
+
+    font-size: 18px;
+
+    font-weight: 700;
+}
+
+
+.navigation-profile-avatar img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+
+.navigation-profile-avatar-error {
+    background:
+            linear-gradient(
+                    135deg,
+                    #7c3aed,
+                    #a855f7
+            );
+}
+
+
+/* =====================================================
+   PROFILE INFO
+   ===================================================== */
+
+.navigation-profile-info {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    gap: 4px;
+}
+
+
+.navigation-profile-username {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+
+.navigation-profile-status {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color: #81758c;
+
+    font-size: 11px;
+}
+
+
+/* =====================================================
+   STATUS DOT
+   ===================================================== */
+
+.navigation-status-dot {
+    width: 7px;
+    height: 7px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: #4ade80;
+
+    box-shadow:
+            0 0 8px rgba(74, 222, 128, 0.45);
+}
+
+
+/* =====================================================
+   LOGOUT
+   ===================================================== */
+
+.navigation-logout {
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    border: 1px solid #3b2a47;
+
+    border-radius: 10px;
+
+    background: #1e1628;
+
+    color: #9f91aa;
+
+    font-size: 0;
+
+    cursor: pointer;
+
+    transition:
+            background 0.18s ease,
+            border-color 0.18s ease,
+            color 0.18s ease,
+            transform 0.18s ease;
+}
+
+
+.navigation-logout-icon {
+    font-size: 20px;
+
+    line-height: 1;
+}
+
+
+.navigation-logout:hover {
+    background: #30203c;
+
+    border-color: #583b69;
+
+    color: #ffffff;
+
+    transform: translateY(-1px);
+}
+
+
+.navigation-logout:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 600px) {
+
+    .navigation-profile {
+        padding: 12px 10px;
+    }
+
+
+    .navigation-profile-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+
+    .navigation-profile-username {
+        font-size: 13px;
+    }
+
+}

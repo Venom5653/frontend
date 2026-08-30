@@ -1,0 +1,666 @@
+.profile-page {
+    min-height: 100vh;
+    padding: 40px 20px 60px;
+
+    background: radial-gradient(
+            circle at top,
+            #24143d 0%,
+            #120d1c 45%,
+            #0b0910 100%
+    );
+
+    color: #f3f0f7;
+
+    font-family: Arial,
+    Helvetica,
+    sans-serif;
+
+    box-sizing: border-box;
+}
+
+
+/* =====================================================
+   HEADER
+   ===================================================== */
+
+.profile-header {
+    width: 100%;
+    max-width: 850px;
+
+    margin: 0 auto 25px;
+}
+
+
+/* =====================================================
+   PROFILE CARD
+   ===================================================== */
+
+.profile-card {
+    width: 100%;
+    max-width: 850px;
+
+    margin: 0 auto 25px;
+    padding: 35px;
+
+    box-sizing: border-box;
+
+    background: rgba(25, 18, 36, 0.95);
+
+    border: 1px solid #382354;
+
+    border-radius: 20px;
+
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.45),
+    0 0 30px rgba(124, 58, 237, 0.08);
+
+    text-align: center;
+}
+
+
+/* =====================================================
+   AVATAR
+   ===================================================== */
+
+.profile-avatar {
+    width: 140px;
+    height: 140px;
+
+    margin: 0 auto 20px;
+
+    border-radius: 50%;
+
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: linear-gradient(
+            135deg,
+            #7c3aed,
+            #a855f7
+    );
+
+    border: 4px solid #4c2675;
+
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.35);
+
+    font-size: 58px;
+    font-weight: bold;
+
+    color: white;
+}
+
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+
+/* =====================================================
+   PROFILE TITLE
+   ===================================================== */
+
+.profile-card h1 {
+    margin: 0;
+
+    font-size: 30px;
+
+    color: #ffffff;
+}
+
+
+.profile-subtitle {
+    margin: 8px 0 25px;
+
+    color: #9f91ad;
+
+    font-size: 15px;
+}
+
+
+/* =====================================================
+   BUTTONS
+   ===================================================== */
+
+.profile-button,
+.back-button,
+.secondary-button,
+.delete-avatar-button,
+.cancel-button,
+.delete-button {
+    border: none;
+
+    border-radius: 10px;
+
+    padding: 11px 18px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease,
+    opacity 0.15s ease;
+}
+
+
+.profile-button {
+    background: linear-gradient(
+            135deg,
+            #7c3aed,
+            #9333ea
+    );
+
+    color: white;
+
+    box-shadow: 0 5px 18px rgba(124, 58, 237, 0.3);
+}
+
+
+.profile-button:hover {
+    background: linear-gradient(
+            135deg,
+            #8b5cf6,
+            #a855f7
+    );
+
+    transform: translateY(-1px);
+
+    box-shadow: 0 7px 22px rgba(139, 92, 246, 0.4);
+}
+
+
+.back-button {
+    background: #21182d;
+
+    color: #c9b9d9;
+
+    border: 1px solid #38264c;
+}
+
+
+.back-button:hover {
+    background: #2d1d3d;
+
+    color: white;
+
+    transform: translateY(-1px);
+}
+
+
+.secondary-button {
+    background: #21182d;
+
+    color: #b9a9c9;
+
+    border: 1px solid #38264c;
+}
+
+
+.secondary-button:hover {
+    background: #30203f;
+
+    color: white;
+}
+
+
+.delete-avatar-button {
+    margin-left: 10px;
+
+    background: #321b32;
+
+    color: #e9a9df;
+
+    border: 1px solid #63315e;
+}
+
+
+.delete-avatar-button:hover {
+    background: #47203f;
+
+    color: #ffffff;
+}
+
+
+.cancel-button {
+    background: #21182d;
+
+    color: #b9a9c9;
+
+    border: 1px solid #38264c;
+}
+
+
+.cancel-button:hover {
+    background: #30203f;
+
+    color: white;
+}
+
+
+.delete-button {
+    background: #491d32;
+
+    color: #ffb5cf;
+
+    border: 1px solid #702542;
+}
+
+
+.delete-button:hover {
+    background: #631f3c;
+
+    color: white;
+}
+
+
+.profile-button:disabled,
+.back-button:disabled,
+.secondary-button:disabled,
+.delete-avatar-button:disabled,
+.cancel-button:disabled,
+.delete-button:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =====================================================
+   AVATAR UPLOAD
+   ===================================================== */
+
+.avatar-upload {
+    margin-top: 20px;
+}
+
+
+.avatar-preview-container {
+    margin-top: 25px;
+
+    padding-top: 20px;
+
+    border-top: 1px solid #30213e;
+}
+
+
+.avatar-preview-container p {
+    margin-bottom: 15px;
+
+    color: #9f91ad;
+}
+
+
+.avatar-preview {
+    width: 110px;
+    height: 110px;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+    border: 3px solid #7c3aed;
+
+    box-shadow: 0 0 25px rgba(124, 58, 237, 0.3);
+}
+
+
+.avatar-actions {
+    margin-top: 18px;
+
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+
+/* =====================================================
+   MESSAGES
+   ===================================================== */
+
+.success,
+.error-message {
+    width: 100%;
+    max-width: 850px;
+
+    margin: 15px auto;
+
+    padding: 13px 18px;
+
+    box-sizing: border-box;
+
+    border-radius: 10px;
+
+    text-align: center;
+
+    font-size: 14px;
+}
+
+
+.success {
+    background: #172d27;
+
+    border: 1px solid #285b4b;
+
+    color: #8ee3c0;
+}
+
+
+.error-message {
+    background: #321b27;
+
+    border: 1px solid #663143;
+
+    color: #ff9fbd;
+}
+
+
+/* =====================================================
+   PROFILE SECTIONS
+   ===================================================== */
+
+.profile-section {
+    width: 100%;
+    max-width: 850px;
+
+    margin: 20px auto;
+
+    padding: 28px 30px;
+
+    box-sizing: border-box;
+
+    background: rgba(25, 18, 36, 0.95);
+
+    border: 1px solid #382354;
+
+    border-radius: 18px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+
+.profile-section h2 {
+    margin: 0 0 8px;
+
+    color: #ffffff;
+
+    font-size: 21px;
+}
+
+
+.section-description {
+    margin: 0 0 22px;
+
+    color: #91839d;
+
+    line-height: 1.5;
+
+    font-size: 14px;
+}
+
+
+/* =====================================================
+   FORM
+   ===================================================== */
+
+.profile-section form {
+    width: 100%;
+}
+
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #c8bbd2;
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+.form-group input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 13px 15px;
+
+    background: #120d19;
+
+    border: 1px solid #3a2850;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    transition: border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+
+.form-group input::placeholder {
+    color: #665a70;
+}
+
+
+.form-group input:focus {
+    background: #160f20;
+
+    border-color: #7c3aed;
+
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+
+.form-group input:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+}
+
+
+/* =====================================================
+   DANGER SECTION
+   ===================================================== */
+
+.danger-section {
+    border-color: #51283b;
+
+    background: linear-gradient(
+            135deg,
+            rgba(39, 20, 35, 0.95),
+            rgba(25, 18, 36, 0.95)
+    );
+}
+
+
+.danger-section h2 {
+    color: #ffb5c9;
+}
+
+
+.danger-section .section-description {
+    color: #a78c99;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 600px) {
+
+    .profile-page {
+        padding: 20px 12px 40px;
+    }
+
+
+    .profile-card,
+    .profile-section {
+        padding: 22px 18px;
+    }
+
+
+    .profile-avatar {
+        width: 115px;
+        height: 115px;
+
+        font-size: 48px;
+    }
+
+
+    .profile-card h1 {
+        font-size: 25px;
+    }
+
+
+    .avatar-actions {
+        flex-direction: column;
+    }
+
+
+    .avatar-actions button {
+        width: 100%;
+    }
+
+
+    .delete-avatar-button {
+        margin: 10px 0 0;
+    }
+}
+/* =====================================================
+   LOGOUT
+   ===================================================== */
+
+.logout-button {
+    border: 1px solid #443653;
+
+    border-radius: 10px;
+
+    padding: 11px 18px;
+
+    background: #21182d;
+
+    color: #c8bdcf;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+            background 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease,
+            transform 0.15s ease,
+            box-shadow 0.15s ease,
+            opacity 0.15s ease;
+}
+
+
+.logout-button:hover {
+    background: #2b2038;
+
+    border-color: #5a476b;
+
+    color: #ffffff;
+
+    transform: translateY(-1px);
+
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.25);
+}
+
+
+.logout-button:active {
+    transform: translateY(0);
+
+    box-shadow: none;
+}
+
+
+.logout-button:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
+}
+
+.navigation-open-button {
+    position: fixed;
+
+    top: 25px;
+    left: 25px;
+
+    width: 46px;
+    height: 46px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #38264c;
+
+    border-radius: 12px;
+
+    background: rgba(25, 18, 36, 0.95);
+
+    color: #c9b9d9;
+
+    font-size: 21px;
+
+    cursor: pointer;
+
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+
+    transition:
+            background 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease,
+            transform 0.15s ease;
+}
+
+
+.navigation-open-button:hover {
+    background: #2d1d3d;
+
+    border-color: #59406e;
+
+    color: #ffffff;
+
+    transform: translateY(-1px);
+}
+
+
+@media (max-width: 600px) {
+
+    .navigation-open-button {
+        top: 15px;
+        left: 15px;
+    }
+
+}
