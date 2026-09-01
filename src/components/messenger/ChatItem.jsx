@@ -2,34 +2,28 @@ import React, {useState} from "react";
 
 import "./ChatItem.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 const ChatItem = ({
                       chat, currentUsername, selected, onClick
                   }) => {
 
+
     const [avatarError, setAvatarError] = useState(false);
 
-
-    // =====================================================
-    // OTHER USER
-    // =====================================================
-
     const user1 = chat.user1Username?.trim();
-
     const user2 = chat.user2Username?.trim();
 
     const normalizedCurrent = currentUsername?.trim().toLowerCase();
 
-
     const isUser1 = user1 && normalizedCurrent && user1.toLowerCase() === normalizedCurrent;
-
 
     const otherUsername = isUser1 ? user2 : user1;
 
 
-    // =====================================================
-    // AVATAR
-    // =====================================================
+// =====================================================
+// AVATAR
+// =====================================================
 
     const avatar = isUser1 ? chat.user2Avatar : chat.user1Avatar;
 
@@ -46,29 +40,29 @@ const ChatItem = ({
             return null;
         }
 
+        // Уже полный URL
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             return trimmed;
         }
 
+        // Относительный путь
         if (trimmed.startsWith("/")) {
-            return `http://localhost:8080${trimmed}`;
+            return `${API_URL}${trimmed}`;
         }
 
-        return `http://localhost:8080/${trimmed}`;
+        return `${API_URL}/${trimmed}`;
     };
 
 
     const avatarUrl = getAvatarUrl(avatar);
 
 
-    const avatarLetter = otherUsername
-        ?.charAt(0)
-        ?.toUpperCase() || "?";
+    const avatarLetter = otherUsername?.charAt(0)?.toUpperCase() || "?";
 
 
-    // =====================================================
-    // TIME
-    // =====================================================
+// =====================================================
+// TIME
+// =====================================================
 
     const formatTime = (date) => {
 
@@ -102,9 +96,7 @@ const ChatItem = ({
             onClick={onClick}
         >
 
-            {/* =================================================
-                AVATAR
-            ================================================= */}
+            {/* AVATAR */}
 
             <div className="chat-item-avatar">
 
@@ -119,17 +111,15 @@ const ChatItem = ({
                 ) : (
 
                     <span>
-                        {avatarLetter}
-                    </span>
+                    {avatarLetter}
+                </span>
 
                 )}
 
             </div>
 
 
-            {/* =================================================
-                INFO
-            ================================================= */}
+            {/* INFO */}
 
             <div className="chat-info">
 
@@ -166,7 +156,7 @@ const ChatItem = ({
             </div>
 
         </button>);
-};
 
+};
 
 export default ChatItem;
