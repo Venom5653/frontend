@@ -1,4 +1,3 @@
-
 import {Client} from "@stomp/stompjs";
 
 let stompClient = null;
@@ -7,6 +6,8 @@ let currentMessageHandler = null;
 let reconnectPromise = null;
 let readSubscription = null;
 let currentReadHandler = null;
+let statusSubscription = null;
+let currentStatusHandler = null;
 
 export function subscribeToReadEvents(onRead) {
 
@@ -27,37 +28,65 @@ export function subscribeToReadEvents(onRead) {
         return;
     }
 
-    readSubscription = stompClient.subscribe(
-        "/user/queue/message-read",
-        message => {
+    readSubscription = stompClient.subscribe("/user/queue/message-read", message => {
 
-            try {
+        try {
 
-                const event =
-                    JSON.parse(message.body);
+            const event = JSON.parse(message.body);
 
-                console.log(
-                    "MESSAGE_READ:",
-                    event
-                );
+            console.log("MESSAGE_READ:", event);
 
-                if (currentReadHandler) {
-                    currentReadHandler(event);
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Ошибка обработки MESSAGE_READ:",
-                    error
-                );
+            if (currentReadHandler) {
+                currentReadHandler(event);
             }
-        }
-    );
 
-    console.log(
-        "Подписка /user/queue/message-read создана"
-    );
+        } catch (error) {
+
+            console.error("Ошибка обработки MESSAGE_READ:", error);
+        }
+    });
+
+    console.log("Подписка /user/queue/message-read создана");
+}
+
+export function subscribeToUserStatus(onStatus) {
+
+    currentStatusHandler = onStatus;
+
+    if (!stompClient) {
+        console.error("STOMP client не существует");
+        return;
+    }
+
+    if (!stompClient.connected) {
+        console.error("STOMP client ещё не подключен");
+        return;
+    }
+
+    if (statusSubscription) {
+        console.log("Подписка на статусы уже существует");
+        return;
+    }
+
+    statusSubscription = stompClient.subscribe("/topic/user-status", message => {
+
+        try {
+
+            const event = JSON.parse(message.body);
+
+            console.log("USER STATUS:", event);
+
+            if (currentStatusHandler) {
+                currentStatusHandler(event);
+            }
+
+        } catch (error) {
+
+            console.error("Ошибка обработки USER STATUS:", error);
+        }
+    });
+
+    console.log("Подписка /topic/user-status создана");
 }
 
 export function connectWebSocket(token, onConnected) {
@@ -108,12 +137,15 @@ export function connectWebSocket(token, onConnected) {
         onConnect: () => {
 
             console.log("========== WS CONNECTED ==========");
+
             console.log("STOMP connected:", stompClient.connected);
+
             console.log("Username должен быть установлен сервером");
 
             subscribeToMessages(currentMessageHandler);
 
             subscribeToReadEvents(currentReadHandler);
+
 
             if (onConnected) {
                 onConnected();
@@ -121,14 +153,17 @@ export function connectWebSocket(token, onConnected) {
         },
 
         onStompError: frame => {
+
             console.error("STOMP error:", frame);
         },
 
         onWebSocketError: error => {
+
             console.error("WebSocket error:", error);
         },
 
         onDisconnect: () => {
+
             console.log("WebSocket отключен");
         }
     });
@@ -173,8 +208,7 @@ export function sendChatMessage(recipientUsername, content) {
             destination: "/app/chat",
 
             body: JSON.stringify({
-                recipientUsername,
-                content
+                recipientUsername, content
             })
         });
 
@@ -184,10 +218,7 @@ export function sendChatMessage(recipientUsername, content) {
 
     } catch (error) {
 
-        console.error(
-            "WebSocket: ошибка отправки сообщения:",
-            error
-        );
+        console.error("WebSocket: ошибка отправки сообщения:", error);
 
         return false;
     }
@@ -218,136 +249,136 @@ export function subscribeToMessages(onMessage) {
         return;
     }
 
-    messageSubscription = stompClient.subscribe(
-        "/user/queue/messages",
-        message => {
+    messageSubscription = stompClient.subscribe("/user/queue/messages", message => {
 
-            console.log("========== WS MESSAGE RECEIVED ==========");
-            console.log("Headers:", message.headers);
-            console.log("Body:", message.body);
+        console.log("========== WS MESSAGE RECEIVED ==========");
 
-            try {
+        console.log("Headers:", message.headers);
 
-                const body = JSON.parse(message.body);
+        console.log("Body:", message.body);
 
-                console.log("Получено сообщение:", body);
+        try {
 
-                if (currentMessageHandler) {
-                    currentMessageHandler(body);
-                }
+            const body = JSON.parse(message.body);
 
-            } catch (error) {
+            console.log("Получено сообщение:", body);
 
-                console.error("Ошибка обработки WebSocket сообщения:", error);
+            if (currentMessageHandler) {
+                currentMessageHandler(body);
             }
+
+        } catch (error) {
+
+            console.error("Ошибка обработки WebSocket сообщения:", error);
         }
-    );
+    });
 
     console.log("========== SUBSCRIBED ==========");
+
     console.log("Destination: /user/queue/messages");
+
     console.log("Subscription ID:", messageSubscription.id);
 
-    console.log(
-        "Подписка /user/queue/messages создана"
-    );
+    console.log("Подписка /user/queue/messages создана");
 }
 
-export function sendMessage(
-    recipientUsername,
-    content
-) {
+export function sendMessage(recipientUsername, content) {
 
-    return sendChatMessage(
-        recipientUsername,
-        content
-    );
+    return sendChatMessage(recipientUsername, content);
 }
 
 export async function reconnectWebSocket(newToken) {
 
-    if (readSubscription) {
-
-        try {
-            readSubscription.unsubscribe();
-        } catch (error) {
-
-            console.error(
-                "WebSocket: ошибка unsubscribe read:",
-                error
-            );
-        }
-
-        readSubscription = null;
-    }
-
     if (!newToken) {
 
-        console.error(
-            "WebSocket: новый JWT отсутствует"
-        );
+        console.error("WebSocket: новый JWT отсутствует");
 
         return;
     }
 
     if (reconnectPromise) {
 
-        console.log(
-            "WebSocket: переподключение уже выполняется"
-        );
+        console.log("WebSocket: переподключение уже выполняется");
 
         return reconnectPromise;
     }
 
     reconnectPromise = (async () => {
 
-        console.log(
-            "WebSocket: переподключение с новым JWT"
-        );
+        console.log("WebSocket: переподключение с новым JWT");
 
         const handler = currentMessageHandler;
+
         const readHandler = currentReadHandler;
+
+        const statusHandler = currentStatusHandler;
 
         if (messageSubscription) {
 
             try {
+
                 messageSubscription.unsubscribe();
+
             } catch (error) {
 
-                console.error(
-                    "WebSocket: ошибка unsubscribe:",
-                    error
-                );
+                console.error("WebSocket: ошибка unsubscribe:", error);
             }
 
             messageSubscription = null;
         }
 
+        if (readSubscription) {
+
+            try {
+
+                readSubscription.unsubscribe();
+
+            } catch (error) {
+
+                console.error("WebSocket: ошибка unsubscribe read:", error);
+            }
+
+            readSubscription = null;
+        }
+
+        if (statusSubscription) {
+
+            try {
+
+                statusSubscription.unsubscribe();
+
+            } catch (error) {
+
+                console.error("WebSocket: ошибка unsubscribe status:", error);
+            }
+
+            statusSubscription = null;
+        }
+
         if (stompClient) {
 
             try {
+
                 await stompClient.deactivate();
+
             } catch (error) {
 
-                console.error(
-                    "WebSocket: ошибка отключения:",
-                    error
-                );
+                console.error("WebSocket: ошибка отключения:", error);
             }
         }
 
         stompClient = null;
 
         currentMessageHandler = handler;
+
         currentReadHandler = readHandler;
 
-        connectWebSocket(
-            newToken,
-            () => {
-                console.log(
-                    "WebSocket: успешно переподключён"
-                );
-            }
-        );
+        currentStatusHandler = statusHandler;
+
+        connectWebSocket(newToken, () => {
+
+            console.log("WebSocket: успешно переподключён");
+        });
 
     })().finally(() => {
 
@@ -360,54 +391,68 @@ export async function reconnectWebSocket(newToken) {
 
 export async function disconnectWebSocket() {
 
-    if (readSubscription) {
-
-        try {
-            readSubscription.unsubscribe();
-        } catch (error) {
-
-            console.error(
-                "WebSocket: ошибка unsubscribe read:",
-                error
-            );
-        }
-
-        readSubscription = null;
-    }
-
-    currentReadHandler = null;
-
     if (messageSubscription) {
 
         try {
+
             messageSubscription.unsubscribe();
+
         } catch (error) {
 
-            console.error(
-                "WebSocket: ошибка unsubscribe:",
-                error
-            );
+            console.error("WebSocket: ошибка unsubscribe:", error);
         }
 
         messageSubscription = null;
     }
 
+    if (readSubscription) {
+
+        try {
+
+            readSubscription.unsubscribe();
+
+        } catch (error) {
+
+            console.error("WebSocket: ошибка unsubscribe read:", error);
+        }
+
+        readSubscription = null;
+    }
+
+    if (statusSubscription) {
+
+        try {
+
+            statusSubscription.unsubscribe();
+
+        } catch (error) {
+
+            console.error("WebSocket: ошибка unsubscribe status:", error);
+        }
+
+        statusSubscription = null;
+    }
+
     currentMessageHandler = null;
+
+    currentReadHandler = null;
+
+    currentStatusHandler = null;
 
     if (stompClient) {
 
         try {
+
             await stompClient.deactivate();
+
         } catch (error) {
 
-            console.error(
-                "WebSocket: ошибка disconnect:",
-                error
-            );
+            console.error("WebSocket: ошибка disconnect:", error);
         }
     }
 
     stompClient = null;
+
     reconnectPromise = null;
 
     console.log("WebSocket отключен");

@@ -13,6 +13,13 @@ import {
 import {
     connectWebSocket, disconnectWebSocket, subscribeToMessages, sendChatMessage, subscribeToReadEvents
 } from "../../services/messenger/websocketService.js";
+import {
+    getOnlineUsers
+} from "../../api/messenger/presenceApi.js";
+
+import {
+    createOnlineUsersSet, subscribeToPresence, isUserOnline
+} from "../../services/messenger/presenceService.js";
 
 import "./MessengerPage.css";
 
@@ -54,6 +61,7 @@ function MessengerPage() {
 
     const previousScrollHeightRef = useRef(null);
 
+    const [onlineUsers, setOnlineUsers] = useState(new Set());
 
     /*
      * Защита от повторной загрузки старых сообщений.
@@ -287,48 +295,25 @@ function MessengerPage() {
         }
 
 
-        connectWebSocket(token, () => {
+        connectWebSocket(token, async () => {
 
             subscribeToMessages(async (message) => {
 
                 console.log("Новое сообщение:", message);
 
-
                 const currentChats = chatsRef.current;
 
                 const currentChat = selectedChatRef.current;
 
-
-                // =========================================
-                // FIND CHAT
-                // =========================================
-
                 const messageChat = currentChats.find(chat => messageBelongsToChat(message, chat));
-
-
-                // =========================================
-                // CURRENT CHAT
-                // =========================================
 
                 const isCurrentChat = currentChat && messageBelongsToChat(message, currentChat);
 
-
-                // =========================================
-                // OWN MESSAGE
-                // =========================================
-
-                const isOwn = message.senderUsername && currentUsername && message.senderUsername
-                    .toLowerCase() === currentUsername.toLowerCase();
-
-
-                // =========================================
-                // ADD MESSAGE
-                // =========================================
+                const isOwn = message.senderUsername && currentUsername && message.senderUsername.toLowerCase() === currentUsername.toLowerCase();
 
                 if (isCurrentChat) {
 
                     shouldScrollToBottomRef.current = true;
-
 
                     setMessages(previous => {
 
@@ -340,11 +325,6 @@ function MessengerPage() {
 
                         return [...previous, message];
                     });
-
-
-                    // =====================================
-                    // MARK READ
-                    // =====================================
 
                     if (message.chatId) {
 
@@ -359,11 +339,6 @@ function MessengerPage() {
                     }
                 }
 
-
-                // =========================================
-                // UPDATE SIDEBAR
-                // =========================================
-
                 if (messageChat) {
 
                     setChats(previous => {
@@ -377,20 +352,14 @@ function MessengerPage() {
                             const unread = Number(chat.unreadCount || 0);
 
                             return {
-
                                 ...chat,
-
                                 lastMessage: message.content,
-
                                 lastMessageCreatedAt: message.createdAt,
-
                                 unreadCount: isCurrentChat || isOwn ? 0 : unread + 1
                             };
                         });
 
-
                         updated.sort((a, b) => new Date(b.lastMessageCreatedAt || b.createdAt) - new Date(a.lastMessageCreatedAt || a.createdAt));
-
 
                         chatsRef.current = updated;
 
@@ -404,15 +373,9 @@ function MessengerPage() {
 
             });
 
-
-            // =========================================
-            // MESSAGE READ EVENTS
-            // =========================================
-
-            subscribeToReadEvents((event) => {
+            subscribeToReadEvents(event => {
 
                 console.log("Сообщения прочитаны:", event);
-
 
                 setMessages(previous => previous.map(message => {
 
@@ -425,9 +388,36 @@ function MessengerPage() {
 
                     return message;
                 }));
-
             });
 
+            subscribeToPresence(({username, online}) => {
+
+                setOnlineUsers(previous => {
+
+                    const next = new Set(previous);
+
+                    const normalized = username.trim().toLowerCase();
+
+                    if (online) {
+                        next.add(normalized);
+                    } else {
+                        next.delete(normalized);
+                    }
+
+                    return next;
+                });
+            });
+
+            try {
+
+                const users = await getOnlineUsers();
+
+                setOnlineUsers(createOnlineUsersSet(users));
+
+            } catch (error) {
+
+                console.error("Ошибка загрузки presence:", error);
+            }
         });
 
 
@@ -1206,7 +1196,7 @@ function MessengerPage() {
                                     </h2>
 
                                     <span>
-                                        В сети
+                                         {isUserOnline(onlineUsers, selectedUsername) ? "В сети" : "Не в сети"}
                                     </span>
 
                                 </div>
