@@ -12,6 +12,10 @@ const ChatSidebar = ({
     const [username, setUsername] = useState("");
 
 
+    // =====================================================
+    // CREATE CHAT
+    // =====================================================
+
     const handleCreateChat = async () => {
 
         const value = username.trim();
@@ -26,44 +30,70 @@ const ChatSidebar = ({
     };
 
 
+    // =====================================================
+    // ENTER
+    // =====================================================
+
+    const handleKeyDown = (event) => {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            handleCreateChat();
+        }
+    };
+
+
+    // =====================================================
+    // RENDER
+    // =====================================================
+
     return (
 
         <aside className="messenger-sidebar">
 
+            {/* =================================================
+                HEADER
+            ================================================= */}
+
             <div className="messenger-sidebar-header">
 
                 <h1>
-                    Messages
+                    Чаты
                 </h1>
 
             </div>
 
 
+            {/* =================================================
+                NEW CHAT
+            ================================================= */}
+
             <div className="new-chat">
 
                 <input
                     type="text"
-                    placeholder="Имя пользователя"
+                    placeholder="Найти пользователя"
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
-                    onKeyDown={(event) => {
-
-                        if (event.key === "Enter") {
-                            handleCreateChat();
-                        }
-
-                    }}
+                    onKeyDown={handleKeyDown}
                 />
 
                 <button
                     type="button"
                     onClick={handleCreateChat}
+                    aria-label="Создать чат"
                 >
                     +
                 </button>
 
             </div>
 
+
+            {/* =================================================
+                ERROR
+            ================================================= */}
 
             {error && (
 
@@ -73,6 +103,10 @@ const ChatSidebar = ({
 
             )}
 
+
+            {/* =================================================
+                CHAT LIST
+            ================================================= */}
 
             <div className="chat-list">
 
@@ -100,7 +134,9 @@ const ChatSidebar = ({
 
             </div>
 
-        </aside>);
+        </aside>
+
+    );
 };
 
 

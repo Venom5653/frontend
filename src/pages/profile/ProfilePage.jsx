@@ -697,53 +697,43 @@ function ProfilePage() {
                 </p>
 
 
-                {/* =================================================
-                    AVATAR
-                ================================================= */}
-
                 <div className="avatar-upload">
 
-                    <label
-                        className="profile-button"
-                        htmlFor="avatar-input"
-                    >
-                        Изменить аватар
-                    </label>
+                    <div className="avatar-main-actions">
 
-
-                    <input
-                        id="avatar-input"
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={handleAvatarChange}
-                        disabled={loading}
-                        style={{
-                            display: "none"
-                        }}
-                    />
-
-
-                    {/* =============================================
-                        КНОПКА УДАЛЕНИЯ
-                    ============================================== */}
-
-                    {avatar && !avatarFile && (
-
-                        <button
-                            type="button"
-                            className="delete-avatar-button"
-                            onClick={handleDeleteAvatar}
-                            disabled={loading}
+                        <label
+                            className="profile-button avatar-select-button"
+                            htmlFor="avatar-input"
                         >
-                            Удалить аватар
-                        </button>
-
-                    )}
+                            Изменить аватар
+                        </label>
 
 
-                    {/* =============================================
-                        ДЕЙСТВИЯ ПОСЛЕ ВЫБОРА
-                    ============================================== */}
+                        <input
+                            id="avatar-input"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleAvatarChange}
+                            disabled={loading}
+                            hidden
+                        />
+
+
+                        {avatar && !avatarFile && (
+
+                            <button
+                                type="button"
+                                className="delete-avatar-button"
+                                onClick={handleDeleteAvatar}
+                                disabled={loading}
+                            >
+                                Удалить аватар
+                            </button>
+
+                        )}
+
+                    </div>
+
 
                     {avatarFile && (
 
@@ -755,7 +745,9 @@ function ProfilePage() {
                                 onClick={handleUpdateAvatar}
                                 disabled={loading}
                             >
-                                {loading ? "Загрузка..." : "Сохранить аватар"}
+                                {loading
+                                    ? "Загрузка..."
+                                    : "Сохранить аватар"}
                             </button>
 
 

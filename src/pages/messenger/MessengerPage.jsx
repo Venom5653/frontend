@@ -1,6 +1,13 @@
 import {
-    useEffect, useLayoutEffect, useRef, useState
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState
 } from "react";
+
+import {
+    useOutletContext
+} from "react-router-dom";
 
 import ChatSidebar from "../../components/messenger/ChatSidebar.jsx";
 
@@ -11,25 +18,45 @@ import {
 } from "../../utils/chatUtils.js";
 
 import {
-    connectWebSocket, disconnectWebSocket, subscribeToMessages, sendChatMessage, subscribeToReadEvents
+    connectWebSocket,
+    disconnectWebSocket,
+    sendChatMessage,
+    subscribeToMessages,
+    subscribeToReadEvents
 } from "../../services/messenger/websocketService.js";
+
 import {
     getOnlineUsers
 } from "../../api/messenger/presenceApi.js";
 
 import {
-    createOnlineUsersSet, subscribeToPresence, isUserOnline
+    createOnlineUsersSet,
+    isUserOnline,
+    subscribeToPresence
 } from "../../services/messenger/presenceService.js";
 
 import "./MessengerPage.css";
 
+const API_URL =
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:8080";
+
+const PAGE_SIZE = 50;
 
 function MessengerPage() {
 
-    // =====================================================
-    // STATE
-    // =====================================================
-    const API_URL = import.meta.env.VITE_API_URL;
+// =====================================================
+// LAYOUT CONTEXT
+// =====================================================
+
+    const {
+        setMobileChatOpen
+    } = useOutletContext();
+
+
+// =====================================================
+// STATE
+// =====================================================
 
     const [currentUser, setCurrentUser] = useState(null);
 
@@ -49,6 +76,15 @@ function MessengerPage() {
 
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
 
+    const [onlineUsers, setOnlineUsers] = useState(new Set());
+
+    const [selectedAvatarError, setSelectedAvatarError] = useState(false);
+
+
+// =====================================================
+// REFS
+// =====================================================
+
     const messagesContainerRef = useRef(null);
 
     const chatsRef = useRef([]);
@@ -59,32 +95,43 @@ function MessengerPage() {
 
     const isOpeningChatRef = useRef(false);
 
-    const previousScrollHeightRef = useRef(null);
+    const previousScrollRef = useRef(null);
 
-    const [onlineUsers, setOnlineUsers] = useState(new Set());
-
-    /*
-     * Защита от повторной загрузки старых сообщений.
-     */
     const loadingOlderMessagesRef = useRef(false);
 
 
-    /*
-     * Используем для контроля последнего ID.
-     */
-    const oldestMessageIdRef = useRef(null);
+// =====================================================
+// CURRENT USERNAME
+// =====================================================
+
+    const currentUsername =
+        currentUser?.username || null;
 
 
-    // =====================================================
-    // CURRENT USERNAME
-    // =====================================================
+// =====================================================
+// SYNC CHAT WITH LAYOUT
+// =====================================================
 
-    const currentUsername = currentUser?.username || null;
+    useEffect(() => {
+
+        setMobileChatOpen(Boolean(selectedChat));
 
 
-    // =====================================================
-    // AVATAR URL
-    // =====================================================
+        return () => {
+
+            setMobileChatOpen(false);
+
+        };
+
+    }, [
+        selectedChat,
+        setMobileChatOpen
+    ]);
+
+
+// =====================================================
+// AVATAR URL
+// =====================================================
 
     const getAvatarUrl = (avatar) => {
 
@@ -92,27 +139,40 @@ function MessengerPage() {
             return null;
         }
 
+
         const value = avatar.trim();
+
 
         if (!value) {
             return null;
         }
 
-        if (value.startsWith("http://") || value.startsWith("https://")) {
+
+        if (
+            value.startsWith("http://") ||
+            value.startsWith("https://")
+        ) {
+
             return value;
+
         }
+
 
         if (value.startsWith("/")) {
+
             return `${API_URL}${value}`;
+
         }
 
+
         return `${API_URL}/${value}`;
+
     };
 
 
-    // =====================================================
-    // AVATAR LETTER
-    // =====================================================
+// =====================================================
+// AVATAR LETTER
+// =====================================================
 
     const getAvatarLetter = (username) => {
 
@@ -120,16 +180,18 @@ function MessengerPage() {
             return "?";
         }
 
+
         return username
             .trim()
             .charAt(0)
             .toUpperCase();
+
     };
 
 
-    // =====================================================
-    // OTHER USERNAME
-    // =====================================================
+// =====================================================
+// OTHER USERNAME
+// =====================================================
 
     const getOtherUsername = (chat) => {
 
@@ -137,31 +199,55 @@ function MessengerPage() {
             return null;
         }
 
-        const user1 = chat.user1Username?.trim();
 
-        const user2 = chat.user2Username?.trim();
+        const user1 =
+            chat.user1Username?.trim();
+
+        const user2 =
+            chat.user2Username?.trim();
+
 
         if (!currentUsername) {
+
             return user1 || user2 || null;
+
         }
 
-        const normalizedCurrent = currentUsername.trim().toLowerCase();
 
-        if (user1 && user1.toLowerCase() === normalizedCurrent) {
+        const normalizedCurrent =
+            currentUsername
+                .trim()
+                .toLowerCase();
+
+
+        if (
+            user1 &&
+            user1.toLowerCase() === normalizedCurrent
+        ) {
+
             return user2 || null;
+
         }
 
-        if (user2 && user2.toLowerCase() === normalizedCurrent) {
+
+        if (
+            user2 &&
+            user2.toLowerCase() === normalizedCurrent
+        ) {
+
             return user1 || null;
+
         }
+
 
         return user1 || user2 || null;
+
     };
 
 
-    // =====================================================
-    // OTHER AVATAR
-    // =====================================================
+// =====================================================
+// OTHER AVATAR
+// =====================================================
 
     const getOtherAvatar = (chat) => {
 
@@ -169,115 +255,197 @@ function MessengerPage() {
             return null;
         }
 
-        const user1 = chat.user1Username?.trim();
 
-        const user2 = chat.user2Username?.trim();
+        const user1 =
+            chat.user1Username?.trim();
+
+        const user2 =
+            chat.user2Username?.trim();
+
 
         if (!currentUsername) {
 
-            return (chat.user1Avatar || chat.user2Avatar || null);
+            return (
+                chat.user1Avatar ||
+                chat.user2Avatar ||
+                null
+            );
+
         }
 
-        const normalizedCurrent = currentUsername.trim().toLowerCase();
 
-        if (user1 && user1.toLowerCase() === normalizedCurrent) {
+        const normalizedCurrent =
+            currentUsername
+                .trim()
+                .toLowerCase();
+
+
+        if (
+            user1 &&
+            user1.toLowerCase() === normalizedCurrent
+        ) {
+
             return chat.user2Avatar || null;
+
         }
 
-        if (user2 && user2.toLowerCase() === normalizedCurrent) {
+
+        if (
+            user2 &&
+            user2.toLowerCase() === normalizedCurrent
+        ) {
+
             return chat.user1Avatar || null;
+
         }
 
-        return (chat.user1Avatar || chat.user2Avatar || null);
+
+        return (
+            chat.user1Avatar ||
+            chat.user2Avatar ||
+            null
+        );
+
     };
 
 
-    // =====================================================
-    // CURRENT USER
-    // =====================================================
+// =====================================================
+// LOAD CURRENT USER
+// =====================================================
 
     const loadCurrentUser = async () => {
 
         try {
 
-            const response = await messengerApi.get("/api/users/me");
+            const response =
+                await messengerApi.get("/api/users/me");
+
 
             const user = response.data;
 
+
             setCurrentUser(user);
+
 
             if (user?.username) {
 
-                localStorage.setItem("username", user.username);
+                localStorage.setItem(
+                    "username",
+                    user.username
+                );
+
             }
+
 
             return user;
 
-        } catch (err) {
+        } catch (error) {
 
-            console.error("Ошибка загрузки пользователя:", err);
+            console.error(
+                "Ошибка загрузки пользователя:",
+                error
+            );
 
-            setError("Не удалось определить текущего пользователя");
+
+            setError(
+                "Не удалось определить текущего пользователя"
+            );
+
 
             return null;
+
         }
+
     };
 
 
-    // =====================================================
-    // LOAD CHATS
-    // =====================================================
+// =====================================================
+// LOAD CHATS
+// =====================================================
 
     const loadChats = async () => {
 
         try {
 
-            const response = await messengerApi.get("/api/chats");
+            const response =
+                await messengerApi.get("/api/chats");
 
-            const chatList = Array.isArray(response.data) ? response.data : [];
+
+            const chatList =
+                Array.isArray(response.data)
+                    ? response.data
+                    : [];
+
 
             setChats(chatList);
 
             chatsRef.current = chatList;
 
+
             return chatList;
 
-        } catch (err) {
+        } catch (error) {
 
-            console.error("Ошибка загрузки чатов:", err);
+            console.error(
+                "Ошибка загрузки чатов:",
+                error
+            );
 
-            setError(err.response?.data?.message || "Не удалось загрузить чаты");
+
+            setError(
+                error.response?.data?.message ||
+                "Не удалось загрузить чаты"
+            );
+
 
             return [];
+
         }
+
     };
 
 
-    // =====================================================
-    // INITIALIZATION
-    // =====================================================
+// =====================================================
+// INITIALIZATION
+// =====================================================
 
     useEffect(() => {
 
         const init = async () => {
 
-            const user = await loadCurrentUser();
+            const user =
+                await loadCurrentUser();
+
 
             if (!user) {
                 return;
             }
 
+
             await loadChats();
+
         };
+
 
         init();
 
     }, []);
 
 
-    // =====================================================
-    // WEBSOCKET
-    // =====================================================
+// =====================================================
+// RESET AVATAR ERROR
+// =====================================================
+
+    useEffect(() => {
+
+        setSelectedAvatarError(false);
+
+    }, [selectedChat?.id]);
+
+
+// =====================================================
+// WEBSOCKET
+// =====================================================
 
     useEffect(() => {
 
@@ -285,140 +453,295 @@ function MessengerPage() {
             return;
         }
 
-        const token = localStorage.getItem("token");
+
+        const token =
+            localStorage.getItem("token");
+
 
         if (!token) {
 
-            console.warn("JWT token отсутствует");
+            console.warn(
+                "JWT token отсутствует"
+            );
 
             return;
+
         }
 
 
-        connectWebSocket(token, async () => {
+        connectWebSocket(
+            token,
+            async () => {
 
-            subscribeToMessages(async (message) => {
 
-                console.log("Новое сообщение:", message);
+                // =========================================
+                // NEW MESSAGE
+                // =========================================
 
-                const currentChats = chatsRef.current;
+                subscribeToMessages(async (message) => {
 
-                const currentChat = selectedChatRef.current;
+                    const currentChats =
+                        chatsRef.current;
 
-                const messageChat = currentChats.find(chat => messageBelongsToChat(message, chat));
+                    const currentChat =
+                        selectedChatRef.current;
 
-                const isCurrentChat = currentChat && messageBelongsToChat(message, currentChat);
 
-                const isOwn = message.senderUsername && currentUsername && message.senderUsername.toLowerCase() === currentUsername.toLowerCase();
+                    const messageChat =
+                        currentChats.find(
+                            chat =>
+                                messageBelongsToChat(
+                                    message,
+                                    chat
+                                )
+                        );
 
-                if (isCurrentChat) {
 
-                    shouldScrollToBottomRef.current = true;
+                    const isCurrentChat =
+                        currentChat &&
+                        messageBelongsToChat(
+                            message,
+                            currentChat
+                        );
 
-                    setMessages(previous => {
 
-                        const exists = previous.some(item => item.id === message.id);
+                    const isOwn =
+                        message.senderUsername &&
+                        currentUsername &&
+                        message.senderUsername
+                            .toLowerCase() ===
+                        currentUsername
+                            .toLowerCase();
 
-                        if (exists) {
-                            return previous;
-                        }
 
-                        return [...previous, message];
-                    });
+                    // =====================================
+                    // ADD MESSAGE
+                    // =====================================
 
-                    if (message.chatId) {
+                    if (isCurrentChat) {
 
-                        try {
+                        shouldScrollToBottomRef.current = true;
 
-                            await messengerApi.put(`/api/messages/chat/${message.chatId}/read`);
 
-                        } catch (error) {
+                        setMessages(previous => {
 
-                            console.error("Ошибка отметки сообщений прочитанными:", error);
-                        }
-                    }
-                }
+                            const exists =
+                                previous.some(
+                                    item =>
+                                        item.id ===
+                                        message.id
+                                );
 
-                if (messageChat) {
 
-                    setChats(previous => {
-
-                        const updated = previous.map(chat => {
-
-                            if (chat.id !== messageChat.id) {
-                                return chat;
+                            if (exists) {
+                                return previous;
                             }
 
-                            const unread = Number(chat.unreadCount || 0);
 
-                            return {
-                                ...chat,
-                                lastMessage: message.content,
-                                lastMessageCreatedAt: message.createdAt,
-                                unreadCount: isCurrentChat || isOwn ? 0 : unread + 1
-                            };
+                            return [
+                                ...previous,
+                                message
+                            ];
+
                         });
 
-                        updated.sort((a, b) => new Date(b.lastMessageCreatedAt || b.createdAt) - new Date(a.lastMessageCreatedAt || a.createdAt));
 
-                        chatsRef.current = updated;
+                        if (message.chatId) {
 
-                        return updated;
-                    });
+                            try {
 
-                } else {
+                                await messengerApi.put(
+                                    `/api/messages/chat/${message.chatId}/read`
+                                );
 
-                    await loadChats();
+                            } catch (error) {
+
+                                console.error(
+                                    "Ошибка отметки сообщений прочитанными:",
+                                    error
+                                );
+
+                            }
+
+                        }
+
+                    }
+
+
+                    // =====================================
+                    // UPDATE CHAT LIST
+                    // =====================================
+
+                    if (messageChat) {
+
+                        setChats(previous => {
+
+                            const updated =
+                                previous.map(chat => {
+
+                                    if (
+                                        chat.id !==
+                                        messageChat.id
+                                    ) {
+
+                                        return chat;
+
+                                    }
+
+
+                                    const unread =
+                                        Number(
+                                            chat.unreadCount || 0
+                                        );
+
+
+                                    return {
+
+                                        ...chat,
+
+                                        lastMessage:
+                                        message.content,
+
+                                        lastMessageCreatedAt:
+                                        message.createdAt,
+
+                                        unreadCount:
+                                            isCurrentChat || isOwn
+                                                ? 0
+                                                : unread + 1
+
+                                    };
+
+                                });
+
+
+                            updated.sort(
+                                (a, b) =>
+                                    new Date(
+                                        b.lastMessageCreatedAt ||
+                                        b.createdAt
+                                    ) -
+                                    new Date(
+                                        a.lastMessageCreatedAt ||
+                                        a.createdAt
+                                    )
+                            );
+
+
+                            chatsRef.current = updated;
+
+
+                            return updated;
+
+                        });
+
+                    } else {
+
+                        await loadChats();
+
+                    }
+
+                });
+
+
+                // =========================================
+                // READ EVENTS
+                // =========================================
+
+                subscribeToReadEvents(event => {
+
+                    setMessages(previous =>
+                        previous.map(message => {
+
+                            if (
+                                message.id ===
+                                event.messageId
+                            ) {
+
+                                return {
+                                    ...message,
+                                    read: true
+                                };
+
+                            }
+
+
+                            return message;
+
+                        })
+                    );
+
+                });
+
+
+                // =========================================
+                // PRESENCE
+                // =========================================
+
+                subscribeToPresence(
+                    ({username, online}) => {
+
+                        if (!username) {
+                            return;
+                        }
+
+
+                        setOnlineUsers(previous => {
+
+                            const next =
+                                new Set(previous);
+
+
+                            const normalized =
+                                username
+                                    .trim()
+                                    .toLowerCase();
+
+
+                            if (online) {
+
+                                next.add(normalized);
+
+                            } else {
+
+                                next.delete(normalized);
+
+                            }
+
+
+                            return next;
+
+                        });
+
+                    }
+                );
+
+
+                // =========================================
+                // INITIAL PRESENCE
+                // =========================================
+
+                try {
+
+                    const users =
+                        await getOnlineUsers();
+
+
+                    setOnlineUsers(
+                        createOnlineUsersSet(users)
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Ошибка загрузки presence:",
+                        error
+                    );
+
                 }
 
-            });
-
-            subscribeToReadEvents(event => {
-
-                console.log("Сообщения прочитаны:", event);
-
-                setMessages(previous => previous.map(message => {
-
-                    if (message.id === event.messageId) {
-
-                        return {
-                            ...message, read: true
-                        };
-                    }
-
-                    return message;
-                }));
-            });
-
-            subscribeToPresence(({username, online}) => {
-
-                setOnlineUsers(previous => {
-
-                    const next = new Set(previous);
-
-                    const normalized = username.trim().toLowerCase();
-
-                    if (online) {
-                        next.add(normalized);
-                    } else {
-                        next.delete(normalized);
-                    }
-
-                    return next;
-                });
-            });
-
-            try {
-
-                const users = await getOnlineUsers();
-
-                setOnlineUsers(createOnlineUsersSet(users));
-
-            } catch (error) {
-
-                console.error("Ошибка загрузки presence:", error);
             }
-        });
+        );
 
 
         return () => {
@@ -430,9 +753,9 @@ function MessengerPage() {
     }, [currentUsername]);
 
 
-    // =====================================================
-    // SYNC CHATS REF
-    // =====================================================
+// =====================================================
+// SYNC REFS
+// =====================================================
 
     useEffect(() => {
 
@@ -441,61 +764,61 @@ function MessengerPage() {
     }, [chats]);
 
 
-    // =====================================================
-    // SYNC SELECTED CHAT REF
-    // =====================================================
-
     useEffect(() => {
 
-        selectedChatRef.current = selectedChat;
+        selectedChatRef.current =
+            selectedChat;
 
     }, [selectedChat]);
 
 
-    // =====================================================
-    // CHECK BOTTOM
-    // =====================================================
+// =====================================================
+// CHECK SCROLL POSITION
+// =====================================================
 
     const checkIfNearBottom = () => {
 
-        const container = messagesContainerRef.current;
+        const container =
+            messagesContainerRef.current;
+
 
         if (!container) {
             return;
         }
 
 
-        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+        const distanceFromBottom =
+            container.scrollHeight -
+            container.scrollTop -
+            container.clientHeight;
 
 
-        shouldScrollToBottomRef.current = distanceFromBottom <= 150;
+        shouldScrollToBottomRef.current =
+            distanceFromBottom <= 150;
+
     };
 
 
-    // =====================================================
-    // LOAD OLDER MESSAGES
-    // =====================================================
+// =====================================================
+// LOAD OLDER MESSAGES
+// =====================================================
 
     const loadOlderMessages = async () => {
 
-        if (loadingOlderMessagesRef.current) {
-            return;
-        }
+        if (
+            loadingOlderMessagesRef.current ||
+            !selectedChat ||
+            !messages.length ||
+            !hasMoreMessages
+        ) {
 
-        if (!selectedChat) {
             return;
-        }
 
-        if (!messages.length) {
-            return;
-        }
-
-        if (!hasMoreMessages) {
-            return;
         }
 
 
-        const oldestMessage = messages[0];
+        const oldestMessage =
+            messages[0];
 
 
         if (!oldestMessage?.id) {
@@ -503,7 +826,9 @@ function MessengerPage() {
         }
 
 
-        const container = messagesContainerRef.current;
+        const container =
+            messagesContainerRef.current;
+
 
         if (!container) {
             return;
@@ -515,139 +840,153 @@ function MessengerPage() {
         setLoadingOlderMessages(true);
 
 
-        /*
-         * Запоминаем положение контейнера
-         * ДО загрузки старых сообщений.
-         */
+        const previousScroll = {
 
-        previousScrollHeightRef.current = container.scrollHeight;
+            height: container.scrollHeight,
 
+            top: container.scrollTop
 
-        const previousScrollTop = container.scrollTop;
+        };
 
 
         try {
 
-            const response = await messengerApi.get(`/api/messages/chat/${selectedChat.id}`, {
-                params: {
-                    beforeId: oldestMessage.id, limit: 50
-                }
-            });
+            const response =
+                await messengerApi.get(
+                    `/api/messages/chat/${selectedChat.id}`,
+                    {
+                        params: {
+                            beforeId: oldestMessage.id,
+                            limit: PAGE_SIZE
+                        }
+                    }
+                );
 
 
-            const olderMessages = Array.isArray(response.data) ? response.data : [];
+            const olderMessages =
+                Array.isArray(response.data)
+                    ? response.data
+                    : [];
 
-
-            /*
-             * Backend возвращает сообщения
-             * от старых к новым.
-             */
 
             if (!olderMessages.length) {
 
                 setHasMoreMessages(false);
 
                 return;
+
             }
 
-
-            /*
-             * Защита от дублей.
-             */
 
             setMessages(previous => {
 
-                const existingIds = new Set(previous.map(message => message.id));
+                const existingIds =
+                    new Set(
+                        previous.map(
+                            message => message.id
+                        )
+                    );
 
 
-                const uniqueOlderMessages = olderMessages.filter(message => !existingIds.has(message.id));
+                const uniqueOlderMessages =
+                    olderMessages.filter(
+                        message =>
+                            !existingIds.has(message.id)
+                    );
 
 
                 if (!uniqueOlderMessages.length) {
+
                     return previous;
+
                 }
 
 
-                return [...uniqueOlderMessages, ...previous];
+                previousScrollRef.current =
+                    previousScroll;
+
+
+                return [
+                    ...uniqueOlderMessages,
+                    ...previous
+                ];
+
             });
 
 
-            /*
-             * Если пришло меньше 50,
-             * значит это последняя порция.
-             */
-
-            if (olderMessages.length < 50) {
+            if (
+                olderMessages.length <
+                PAGE_SIZE
+            ) {
 
                 setHasMoreMessages(false);
+
             }
-
-
-            /*
-             * Сохраняем старое положение.
-             *
-             * После render useLayoutEffect
-             * восстановит scrollTop.
-             */
-
-            previousScrollHeightRef.current = {
-                height: previousScrollHeightRef.current, top: previousScrollTop
-            };
 
         } catch (error) {
 
-            console.error("Ошибка загрузки старых сообщений:", error);
+            console.error(
+                "Ошибка загрузки старых сообщений:",
+                error
+            );
 
-            setError(error.response?.data?.message || "Не удалось загрузить старые сообщения");
+
+            setError(
+                error.response?.data?.message ||
+                "Не удалось загрузить старые сообщения"
+            );
 
         } finally {
 
             setLoadingOlderMessages(false);
 
             loadingOlderMessagesRef.current = false;
+
         }
+
     };
 
 
-    // =====================================================
-    // SCROLL
-    // =====================================================
+// =====================================================
+// SCROLL
+// =====================================================
 
     const handleMessagesScroll = () => {
 
-        const container = messagesContainerRef.current;
+        const container =
+            messagesContainerRef.current;
+
 
         if (!container) {
             return;
         }
 
 
-        /*
-         * Определяем положение относительно низа.
-         */
-
         checkIfNearBottom();
 
 
-        /*
-         * Если пользователь приблизился
-         * к верхней границе — грузим старые сообщения.
-         */
-
-        if (container.scrollTop <= 100 && !loadingOlderMessagesRef.current && hasMoreMessages) {
+        if (
+            container.scrollTop <= 100 &&
+            !loadingOlderMessagesRef.current &&
+            hasMoreMessages
+        ) {
 
             loadOlderMessages();
+
         }
+
     };
 
 
-    // =====================================================
-    // LAYOUT AFTER MESSAGES UPDATE
-    // =====================================================
+// =====================================================
+// LAYOUT AFTER UPDATE
+// =====================================================
 
     useLayoutEffect(() => {
 
-        const container = messagesContainerRef.current;
+        const container =
+            messagesContainerRef.current;
+
 
         if (!container) {
             return;
@@ -659,51 +998,57 @@ function MessengerPage() {
             container.scrollTop = 0;
 
             return;
+
         }
 
 
-        // =================================================
-        // ВОССТАНОВЛЕНИЕ ПОЗИЦИИ ПОСЛЕ ЗАГРУЗКИ СТАРЫХ
-        // =================================================
+        // =============================================
+        // RESTORE SCROLL
+        // =============================================
 
-        const previousScroll = previousScrollHeightRef.current;
-
-
-        if (previousScroll && typeof previousScroll === "object") {
-
-            const newScrollHeight = container.scrollHeight;
+        const previousScroll =
+            previousScrollRef.current;
 
 
-            const heightDifference = newScrollHeight - previousScroll.height;
+        if (previousScroll) {
+
+            const heightDifference =
+                container.scrollHeight -
+                previousScroll.height;
 
 
-            container.scrollTop = previousScroll.top + heightDifference;
+            container.scrollTop =
+                previousScroll.top +
+                heightDifference;
 
 
-            previousScrollHeightRef.current = null;
-
+            previousScrollRef.current = null;
 
             return;
+
         }
 
 
-        // =================================================
-        // ОТКРЫТИЕ НОВОГО ЧАТА
-        // =================================================
+        // =============================================
+        // OPEN CHAT
+        // =============================================
 
-        if (!loadingMessages && isOpeningChatRef.current) {
-
-            container.scrollTop = container.scrollHeight;
-
+        if (
+            !loadingMessages &&
+            isOpeningChatRef.current
+        ) {
 
             requestAnimationFrame(() => {
 
-                container.scrollTop = container.scrollHeight;
+                container.scrollTop =
+                    container.scrollHeight;
 
 
                 requestAnimationFrame(() => {
 
-                    container.scrollTop = container.scrollHeight;
+                    container.scrollTop =
+                        container.scrollHeight;
+
 
                     isOpeningChatRef.current = false;
 
@@ -713,43 +1058,160 @@ function MessengerPage() {
 
 
             return;
+
         }
 
 
-        // =================================================
-        // НОВОЕ СООБЩЕНИЕ
-        // =================================================
+        // =============================================
+        // NEW MESSAGE
+        // =============================================
 
-        if (!loadingMessages && shouldScrollToBottomRef.current) {
+        if (
+            !loadingMessages &&
+            shouldScrollToBottomRef.current
+        ) {
 
             requestAnimationFrame(() => {
 
-                container.scrollTop = container.scrollHeight;
+                container.scrollTop =
+                    container.scrollHeight;
 
             });
+
         }
 
-    }, [messages, loadingMessages]);
+    }, [
+        messages,
+        loadingMessages
+    ]);
 
 
-    // =====================================================
-    // CREATE CHAT
-    // =====================================================
+// =====================================================
+// LOAD CHAT MESSAGES
+// =====================================================
+
+    const loadChatMessages = async (chat) => {
+
+        setLoadingMessages(true);
+
+        setHasMoreMessages(true);
+
+        previousScrollRef.current = null;
+
+        isOpeningChatRef.current = true;
+
+        shouldScrollToBottomRef.current = true;
+
+        setMessages([]);
+
+
+        try {
+
+            const response =
+                await messengerApi.get(
+                    `/api/messages/chat/${chat.id}`,
+                    {
+                        params: {
+                            limit: PAGE_SIZE
+                        }
+                    }
+                );
+
+
+            const loadedMessages =
+                Array.isArray(response.data)
+                    ? response.data
+                    : [];
+
+
+            setMessages(loadedMessages);
+
+
+            setHasMoreMessages(
+                loadedMessages.length ===
+                PAGE_SIZE
+            );
+
+
+            await messengerApi.put(
+                `/api/messages/chat/${chat.id}/read`
+            );
+
+
+            setChats(previous => {
+
+                const updated =
+                    previous.map(item =>
+                        item.id === chat.id
+                            ? {
+                                ...item,
+                                unreadCount: 0
+                            }
+                            : item
+                    );
+
+
+                chatsRef.current = updated;
+
+
+                return updated;
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Ошибка загрузки сообщений:",
+                error
+            );
+
+
+            setMessages([]);
+
+            setHasMoreMessages(false);
+
+
+            setError(
+                error.response?.data?.message ||
+                "Не удалось загрузить сообщения"
+            );
+
+        } finally {
+
+            setLoadingMessages(false);
+
+        }
+
+    };
+
+
+// =====================================================
+// CREATE CHAT
+// =====================================================
 
     const createChat = async (username) => {
 
-        const target = username?.trim();
+        const target =
+            username?.trim();
+
 
         if (!target) {
             return;
         }
 
 
-        if (currentUsername && target.toLowerCase() === currentUsername.toLowerCase()) {
+        if (
+            currentUsername &&
+            target.toLowerCase() ===
+            currentUsername.toLowerCase()
+        ) {
 
-            setError("Нельзя создать чат с самим собой");
+            setError(
+                "Нельзя создать чат с самим собой"
+            );
 
             return;
+
         }
 
 
@@ -758,119 +1220,79 @@ function MessengerPage() {
             setError("");
 
 
-            const response = await messengerApi.post("/api/chats", {
-                username: target
-            });
+            const response =
+                await messengerApi.post(
+                    "/api/chats",
+                    {
+                        username: target
+                    }
+                );
 
 
-            const newChat = response.data;
+            const newChat =
+                response.data;
 
 
             setChats(previous => {
 
-                const exists = previous.some(chat => chat.id === newChat.id);
+                const exists =
+                    previous.some(
+                        chat =>
+                            chat.id ===
+                            newChat.id
+                    );
 
 
-                let updated;
-
-
-                if (exists) {
-
-                    updated = previous.map(chat => chat.id === newChat.id ? newChat : chat);
-
-                } else {
-
-                    updated = [newChat, ...previous];
-                }
+                const updated =
+                    exists
+                        ? previous.map(chat =>
+                            chat.id === newChat.id
+                                ? newChat
+                                : chat
+                        )
+                        : [
+                            newChat,
+                            ...previous
+                        ];
 
 
                 chatsRef.current = updated;
 
 
                 return updated;
+
             });
 
 
             setSelectedChat(newChat);
 
-            selectedChatRef.current = newChat;
+            selectedChatRef.current =
+                newChat;
 
 
-            // =================================================
-            // RESET PAGINATION
-            // =================================================
+            await loadChatMessages(newChat);
 
-            setHasMoreMessages(true);
+        } catch (error) {
 
-            oldestMessageIdRef.current = null;
-
-
-            isOpeningChatRef.current = true;
-
-            shouldScrollToBottomRef.current = true;
+            console.error(
+                "Ошибка создания чата:",
+                error
+            );
 
 
-            setMessages([]);
+            setError(
+                error.response?.data?.message ||
+                "Не удалось создать чат"
+            );
 
-            setLoadingMessages(true);
-
-
-            try {
-
-                const responseMessages = await messengerApi.get(`/api/messages/chat/${newChat.id}`, {
-                    params: {
-                        limit: 50
-                    }
-                });
-
-
-                const loadedMessages = Array.isArray(responseMessages.data) ? responseMessages.data : [];
-
-
-                setMessages(loadedMessages);
-
-
-                if (loadedMessages.length < 50) {
-
-                    setHasMoreMessages(false);
-
-                } else {
-
-                    setHasMoreMessages(true);
-                }
-
-
-                if (loadedMessages.length) {
-
-                    oldestMessageIdRef.current = loadedMessages[0].id;
-                }
-
-            } catch (messageError) {
-
-                console.error("Ошибка загрузки сообщений:", messageError);
-
-                setMessages([]);
-
-                setHasMoreMessages(false);
-
-            } finally {
-
-                setLoadingMessages(false);
-            }
-
-
-        } catch (err) {
-
-            console.error("Ошибка создания чата:", err);
-
-            setError(err.response?.data?.message || "Не удалось создать чат");
         }
+
     };
 
 
-    // =====================================================
-    // SELECT CHAT
-    // =====================================================
+// =====================================================
+// SELECT CHAT
+// =====================================================
 
     const selectChat = async (chat) => {
 
@@ -879,190 +1301,122 @@ function MessengerPage() {
         }
 
 
-        setSelectedChat(chat);
-
-        selectedChatRef.current = chat;
-
-
         setError("");
 
-        setLoadingMessages(true);
 
-        setLoadingOlderMessages(false);
+        setSelectedChat(chat);
 
-        loadingOlderMessagesRef.current = false;
-
-
-        // =================================================
-        // RESET PAGINATION
-        // =================================================
-
-        setHasMoreMessages(true);
-
-        oldestMessageIdRef.current = null;
-
-        previousScrollHeightRef.current = null;
+        selectedChatRef.current =
+            chat;
 
 
-        /*
-         * Открывается новый чат.
-         */
+        await loadChatMessages(chat);
 
-        isOpeningChatRef.current = true;
-
-        shouldScrollToBottomRef.current = true;
-
-
-        /*
-         * Очищаем старые сообщения.
-         */
-
-        setMessages([]);
-
-
-        try {
-
-            // =============================================
-            // LOAD LAST 50
-            // =============================================
-
-            const response = await messengerApi.get(`/api/messages/chat/${chat.id}`, {
-                params: {
-                    limit: 50
-                }
-            });
-
-
-            const loadedMessages = Array.isArray(response.data) ? response.data : [];
-
-
-            setMessages(loadedMessages);
-
-
-            // =============================================
-            // PAGINATION STATE
-            // =============================================
-
-            if (loadedMessages.length < 50) {
-
-                setHasMoreMessages(false);
-
-            } else {
-
-                setHasMoreMessages(true);
-            }
-
-
-            if (loadedMessages.length) {
-
-                oldestMessageIdRef.current = loadedMessages[0].id;
-            }
-
-
-            // =============================================
-            // MARK AS READ
-            // =============================================
-
-            await messengerApi.put(`/api/messages/chat/${chat.id}/read`);
-
-
-            // =============================================
-            // RESET UNREAD
-            // =============================================
-
-            setChats(previous => {
-
-                const updated = previous.map(item => item.id === chat.id ? {
-                    ...item, unreadCount: 0
-                } : item);
-
-
-                chatsRef.current = updated;
-
-
-                return updated;
-            });
-
-
-        } catch (err) {
-
-            console.error("Ошибка загрузки сообщений:", err);
-
-
-            setMessages([]);
-
-            setHasMoreMessages(false);
-
-
-            setError(err.response?.data?.message || "Не удалось загрузить сообщения");
-
-        } finally {
-
-            setLoadingMessages(false);
-        }
     };
 
 
-    // =====================================================
-    // SEND MESSAGE
-    // =====================================================
+// =====================================================
+// CLOSE CHAT
+// =====================================================
+
+    const closeMobileChat = () => {
+
+        setSelectedChat(null);
+
+        selectedChatRef.current = null;
+
+        setMessages([]);
+
+        setContent("");
+
+        setError("");
+
+        setMobileChatOpen(false);
+
+    };
+
+
+// =====================================================
+// SEND MESSAGE
+// =====================================================
 
     const sendMessage = () => {
 
-        if (!content.trim() || !selectedChat) {
+        const text =
+            content.trim();
+
+
+        if (!text || !selectedChat) {
             return;
         }
 
 
-        const recipient = getOtherUsername(selectedChat);
+        const recipient =
+            getOtherUsername(selectedChat);
 
 
         if (!recipient) {
 
-            setError("Не удалось определить получателя");
+            setError(
+                "Не удалось определить получателя"
+            );
 
             return;
+
         }
 
 
         shouldScrollToBottomRef.current = true;
 
 
-        const success = sendChatMessage(recipient, content.trim());
+        const success =
+            sendChatMessage(
+                recipient,
+                text
+            );
 
 
         if (!success) {
 
-            setError("WebSocket не подключен");
+            setError(
+                "WebSocket не подключен"
+            );
 
             return;
+
         }
 
 
         setContent("");
 
         setError("");
+
     };
 
 
-    // =====================================================
-    // ENTER
-    // =====================================================
+// =====================================================
+// ENTER
+// =====================================================
 
     const handleKeyDown = (event) => {
 
-        if (event.key === "Enter" && !event.shiftKey) {
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
 
             event.preventDefault();
 
             sendMessage();
+
         }
+
     };
 
 
-    // =====================================================
-    // FORMAT TIME
-    // =====================================================
+// =====================================================
+// FORMAT TIME
+// =====================================================
 
     const formatTime = (date) => {
 
@@ -1071,45 +1425,66 @@ function MessengerPage() {
         }
 
 
-        const parsed = new Date(date);
+        const parsed =
+            new Date(date);
 
 
-        if (Number.isNaN(parsed.getTime())) {
+        if (
+            Number.isNaN(
+                parsed.getTime()
+            )
+        ) {
+
             return "";
+
         }
 
 
-        return parsed.toLocaleTimeString("ru-RU", {
-            hour: "2-digit", minute: "2-digit"
-        });
+        return parsed.toLocaleTimeString(
+            "ru-RU",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
     };
 
 
-    // =====================================================
-    // SELECTED CHAT DATA
-    // =====================================================
+// =====================================================
+// SELECTED CHAT DATA
+// =====================================================
 
-    const selectedUsername = getOtherUsername(selectedChat);
-
-
-    const selectedAvatar = getOtherAvatar(selectedChat);
+    const selectedUsername =
+        getOtherUsername(selectedChat);
 
 
-    const selectedAvatarUrl = getAvatarUrl(selectedAvatar);
+    const selectedAvatar =
+        getOtherAvatar(selectedChat);
 
 
-    const currentAvatarUrl = getAvatarUrl(currentUser?.avatar);
+    const selectedAvatarUrl =
+        getAvatarUrl(selectedAvatar);
 
 
-    // =====================================================
-    // RENDER
-    // =====================================================
+// =====================================================
+// RENDER
+// =====================================================
 
     return (
 
         <div className="messenger-page">
 
-            <div className="messenger-container">
+            <div
+                className={`messenger-container ${
+                    selectedChat ? "mobile-chat-open" : ""
+                }`}
+            >
+
+
+                {/* =========================================
+                SIDEBAR
+            ========================================= */}
 
                 <ChatSidebar
                     chats={chats}
@@ -1121,11 +1496,12 @@ function MessengerPage() {
                 />
 
 
-                {/* =================================================
-                    CHAT
-                ================================================= */}
+                {/* =========================================
+                CHAT
+            ========================================= */}
 
                 <main className="messenger-chat">
+
 
                     {!selectedChat ? (
 
@@ -1150,54 +1526,78 @@ function MessengerPage() {
 
                         <>
 
+
                             {/* =================================
-                                HEADER
-                            ================================= */}
+                            HEADER
+                        ================================= */}
 
                             <header className="chat-header">
 
-                                <div className="chat-avatar chat-avatar-header">
 
-                                    {selectedAvatarUrl ? (
+                                <button
+                                    type="button"
+                                    className="mobile-back-button"
+                                    onClick={closeMobileChat}
+                                    aria-label="Назад к чатам"
+                                >
+                                    ←
+                                </button>
+
+
+                                {/* AVATAR */}
+
+                                <div className="chat-avatar-header">
+
+                                    {selectedAvatarUrl &&
+                                    !selectedAvatarError ? (
 
                                         <img
                                             src={selectedAvatarUrl}
-                                            alt={selectedUsername || "Avatar"}
-                                            onError={event => {
-
-                                                console.error("Не удалось загрузить аватар:", selectedAvatarUrl);
-
-                                                event.currentTarget.style.display = "none";
-
-                                                const parent = event.currentTarget.parentElement;
-
-                                                if (parent) {
-
-                                                    parent.classList.add("avatar-error");
-                                                }
-                                            }}
+                                            alt={
+                                                selectedUsername ||
+                                                "Avatar"
+                                            }
+                                            onError={() =>
+                                                setSelectedAvatarError(true)
+                                            }
                                         />
 
                                     ) : (
 
                                         <span>
-                                            {getAvatarLetter(selectedUsername)}
-                                        </span>
+
+                                        {getAvatarLetter(
+                                            selectedUsername
+                                        )}
+
+                                    </span>
 
                                     )}
 
                                 </div>
 
 
+                                {/* INFO */}
+
                                 <div className="chat-header-info">
 
                                     <h2>
-                                        {selectedUsername || "Пользователь"}
+
+                                        {selectedUsername ||
+                                            "Пользователь"}
+
                                     </h2>
 
                                     <span>
-                                         {isUserOnline(onlineUsers, selectedUsername) ? "В сети" : "Не в сети"}
-                                    </span>
+
+                                    {isUserOnline(
+                                        onlineUsers,
+                                        selectedUsername
+                                    )
+                                        ? "В сети"
+                                        : "Не в сети"}
+
+                                </span>
 
                                 </div>
 
@@ -1205,8 +1605,8 @@ function MessengerPage() {
 
 
                             {/* =================================
-                                MESSAGES
-                            ================================= */}
+                            MESSAGES
+                        ================================= */}
 
                             <div
                                 className="messages-container"
@@ -1214,13 +1614,10 @@ function MessengerPage() {
                                 onScroll={handleMessagesScroll}
                             >
 
-                                {/* =================================
-                                    LOADING OLDER
-                                ================================= */}
 
                                 {loadingOlderMessages && (
 
-                                    <div className="messages-loading older-messages-loading">
+                                    <div className="older-messages-loading">
 
                                         Загрузка старых сообщений...
 
@@ -1250,8 +1647,8 @@ function MessengerPage() {
                                         </p>
 
                                         <span>
-                                            Напишите первое сообщение
-                                        </span>
+                                        Напишите первое сообщение
+                                    </span>
 
                                     </div>
 
@@ -1259,25 +1656,37 @@ function MessengerPage() {
 
                                     messages.map(message => {
 
-                                        const own = message.senderUsername && currentUsername && message.senderUsername
-                                            .toLowerCase() === currentUsername
-                                            .toLowerCase();
+                                        const own =
+                                            message.senderUsername &&
+                                            currentUsername &&
+                                            message.senderUsername
+                                                .toLowerCase() ===
+                                            currentUsername
+                                                .toLowerCase();
 
 
                                         return (
 
                                             <div
                                                 key={message.id}
-                                                className={`message-row ${own ? "own" : "other"}`}
+                                                className={
+                                                    `message-row ${
+                                                        own
+                                                            ? "own"
+                                                            : "other"
+                                                    }`
+                                                }
                                             >
 
                                                 <div className="message-bubble">
+
 
                                                     {!own && (
 
                                                         <div className="message-sender">
 
-                                                            {message.senderUsername || "Пользователь"}
+                                                            {message.senderUsername ||
+                                                                "Пользователь"}
 
                                                         </div>
 
@@ -1293,18 +1702,28 @@ function MessengerPage() {
 
                                                     <div className="message-time">
 
-                                                        {formatTime(message.createdAt)}
+                                                        {formatTime(
+                                                            message.createdAt
+                                                        )}
 
 
                                                         {own && (
 
                                                             <span
-                                                                className={`message-read-status ${message.read ? "read" : ""}`}
+                                                                className={
+                                                                    `message-read-status ${
+                                                                        message.read
+                                                                            ? "read"
+                                                                            : ""
+                                                                    }`
+                                                                }
                                                             >
 
-                                                                    {message.read ? "✓✓" : "✓"}
+                                                            {message.read
+                                                                ? "✓✓"
+                                                                : "✓"}
 
-                                                                </span>
+                                                        </span>
 
                                                         )}
 
@@ -1324,23 +1743,29 @@ function MessengerPage() {
 
 
                             {/* =================================
-                                INPUT
-                            ================================= */}
+                            INPUT
+                        ================================= */}
 
                             <div className="message-input-container">
 
-                                <textarea
-                                    value={content}
-                                    onChange={event => setContent(event.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Напишите сообщение..."
-                                    rows="1"
-                                />
+                            <textarea
+                                value={content}
+                                onChange={event =>
+                                    setContent(
+                                        event.target.value
+                                    )
+                                }
+                                onKeyDown={handleKeyDown}
+                                placeholder="Напишите сообщение..."
+                                rows="1"
+                            />
 
 
                                 <button
+                                    type="button"
                                     onClick={sendMessage}
                                     disabled={!content.trim()}
+                                    aria-label="Отправить сообщение"
                                 >
                                     ➤
                                 </button>
@@ -1355,8 +1780,11 @@ function MessengerPage() {
 
             </div>
 
-        </div>);
-}
+        </div>
 
+    );
+
+
+}
 
 export default MessengerPage;

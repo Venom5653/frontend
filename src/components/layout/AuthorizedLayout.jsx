@@ -1,5 +1,9 @@
 import {useEffect, useState} from "react";
-import {Outlet, useNavigate} from "react-router-dom";
+
+import {
+    Outlet,
+    useNavigate
+} from "react-router-dom";
 
 import NavigationMenu from "../common/NavigationMenu.jsx";
 
@@ -11,8 +15,6 @@ import {
     disconnectWebSocket
 } from "../../services/messenger/websocketService.js";
 
-import {authApi} from "../../api/api.js";
-
 import "./AuthorizedLayout.css";
 
 
@@ -20,24 +22,27 @@ function AuthorizedLayout() {
 
     const navigate = useNavigate();
 
+
+    // =====================================================
+    // STATE
+    // =====================================================
+
     const [navigationOpen, setNavigationOpen] = useState(false);
 
     const [username, setUsername] = useState("");
 
     const [avatar, setAvatar] = useState(null);
 
-    const [avatarUrl, setAvatarUrl] = useState(null);
-
     const [loading, setLoading] = useState(false);
+
+    const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
 
     // =====================================================
-    // ЗАГРУЗКА USERNAME И АВАТАРА
+    // LOAD PROFILE
     // =====================================================
 
     useEffect(() => {
-
-        let objectUrl = null;
 
         const loadProfile = async () => {
 
@@ -45,53 +50,22 @@ function AuthorizedLayout() {
 
                 const response = await getCurrentUser();
 
-                setUsername(response.username || "");
+                setUsername(response?.username || "");
 
-
-                const avatarPath = response.avatar || null;
-
-                setAvatar(avatarPath);
-
-
-                if (!avatarPath) {
-
-                    setAvatarUrl(null);
-
-                    return;
-                }
-
-
-                const avatarRequestPath = avatarPath.startsWith("/api/") ? avatarPath.substring(4) : avatarPath;
-
-
-                const imageResponse = await authApi.get(avatarRequestPath, {
-                    responseType: "blob"
-                });
-
-
-                objectUrl = URL.createObjectURL(imageResponse.data);
-
-
-                setAvatarUrl(objectUrl);
+                setAvatar(response?.avatar || null);
 
             } catch (error) {
 
-                console.error("Не удалось загрузить данные пользователя:", error);
+                console.error(
+                    "Не удалось загрузить данные пользователя:",
+                    error
+                );
 
             }
         };
 
 
         loadProfile();
-
-
-        return () => {
-
-            if (objectUrl) {
-
-                URL.revokeObjectURL(objectUrl);
-            }
-        };
 
     }, []);
 
@@ -112,23 +86,19 @@ function AuthorizedLayout() {
             setLoading(true);
 
 
-            // =============================================
-            // Отключаем WebSocket
-            // =============================================
-
             try {
 
                 await disconnectWebSocket();
 
             } catch (webSocketError) {
 
-                console.error("Ошибка отключения WebSocket:", webSocketError);
+                console.error(
+                    "Ошибка отключения WebSocket:",
+                    webSocketError
+                );
+
             }
 
-
-            // =============================================
-            // Очищаем авторизацию
-            // =============================================
 
             localStorage.removeItem("token");
 
@@ -136,10 +106,6 @@ function AuthorizedLayout() {
 
             localStorage.removeItem("username");
 
-
-            // =============================================
-            // Переход на LOGIN
-            // =============================================
 
             navigate("/login", {
                 replace: true
@@ -152,17 +118,26 @@ function AuthorizedLayout() {
         } finally {
 
             setLoading(false);
+
         }
     };
 
 
+    // =====================================================
+    // RENDER
+    // =====================================================
+
     return (
 
-        <div className="authorized-layout">
-
-            {/* =================================================
-                КНОПКА НАВИГАЦИИ
-            ================================================= */}
+        <div
+            className={
+                `authorized-layout ${
+                    mobileChatOpen
+                        ? "mobile-chat-is-open"
+                        : ""
+                }`
+            }
+        >
 
             <button
                 type="button"
@@ -174,10 +149,6 @@ function AuthorizedLayout() {
             </button>
 
 
-            {/* =================================================
-                NAVIGATION MENU
-            ================================================= */}
-
             <NavigationMenu
                 open={navigationOpen}
                 onClose={() => setNavigationOpen(false)}
@@ -188,17 +159,19 @@ function AuthorizedLayout() {
             />
 
 
-            {/* =================================================
-                PAGE
-            ================================================= */}
-
             <main className="authorized-content">
 
-                <Outlet/>
+                <Outlet
+                    context={{
+                        setMobileChatOpen
+                    }}
+                />
 
             </main>
 
-        </div>);
+        </div>
+
+    );
 }
 
 

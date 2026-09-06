@@ -1,29 +1,55 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 
 import "./ChatItem.css";
 
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
 
 const ChatItem = ({
                       chat, currentUsername, selected, onClick
                   }) => {
 
 
+    // =====================================================
+    // STATE
+    // =====================================================
+
     const [avatarError, setAvatarError] = useState(false);
 
+
+    // =====================================================
+    // RESET AVATAR ERROR
+    // =====================================================
+
+    useEffect(() => {
+
+        setAvatarError(false);
+
+    }, [chat.id, chat.user1Avatar, chat.user2Avatar]);
+
+
+    // =====================================================
+    // USERS
+    // =====================================================
+
     const user1 = chat.user1Username?.trim();
+
     const user2 = chat.user2Username?.trim();
+
 
     const normalizedCurrent = currentUsername?.trim().toLowerCase();
 
+
     const isUser1 = user1 && normalizedCurrent && user1.toLowerCase() === normalizedCurrent;
+
 
     const otherUsername = isUser1 ? user2 : user1;
 
 
-// =====================================================
-// AVATAR
-// =====================================================
+    // =====================================================
+    // AVATAR
+    // =====================================================
 
     const avatar = isUser1 ? chat.user2Avatar : chat.user1Avatar;
 
@@ -34,21 +60,30 @@ const ChatItem = ({
             return null;
         }
 
+
         const trimmed = value.trim();
+
 
         if (!trimmed) {
             return null;
         }
 
-        // Уже полный URL
+
+        // Полный URL
+
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+
             return trimmed;
         }
 
+
         // Относительный путь
+
         if (trimmed.startsWith("/")) {
+
             return `${API_URL}${trimmed}`;
         }
+
 
         return `${API_URL}/${trimmed}`;
     };
@@ -57,12 +92,14 @@ const ChatItem = ({
     const avatarUrl = getAvatarUrl(avatar);
 
 
-    const avatarLetter = otherUsername?.charAt(0)?.toUpperCase() || "?";
+    const avatarLetter = otherUsername
+        ?.charAt(0)
+        ?.toUpperCase() || "?";
 
 
-// =====================================================
-// TIME
-// =====================================================
+    // =====================================================
+    // TIME
+    // =====================================================
 
     const formatTime = (date) => {
 
@@ -70,11 +107,14 @@ const ChatItem = ({
             return "";
         }
 
+
         const parsed = new Date(date);
+
 
         if (Number.isNaN(parsed.getTime())) {
             return "";
         }
+
 
         return parsed.toLocaleTimeString("ru-RU", {
             hour: "2-digit", minute: "2-digit"
@@ -82,11 +122,19 @@ const ChatItem = ({
     };
 
 
+    // =====================================================
+    // DATA
+    // =====================================================
+
     const lastMessage = chat.lastMessage || "Пока нет сообщений";
 
 
     const unreadCount = Number(chat.unreadCount) || 0;
 
+
+    // =====================================================
+    // RENDER
+    // =====================================================
 
     return (
 
@@ -96,7 +144,10 @@ const ChatItem = ({
             onClick={onClick}
         >
 
-            {/* AVATAR */}
+
+            {/* =============================================
+                AVATAR
+            ============================================= */}
 
             <div className="chat-item-avatar">
 
@@ -111,42 +162,58 @@ const ChatItem = ({
                 ) : (
 
                     <span>
-                    {avatarLetter}
-                </span>
+                        {avatarLetter}
+                    </span>
 
                 )}
 
             </div>
 
 
-            {/* INFO */}
+            {/* =============================================
+                INFO
+            ============================================= */}
 
             <div className="chat-info">
+
+
+                {/* HEADER */}
 
                 <div className="chat-info-header">
 
                     <div className="chat-name">
+
                         {otherUsername || "Неизвестный пользователь"}
+
                     </div>
 
+
                     <div className="chat-time">
+
                         {formatTime(chat.lastMessageCreatedAt)}
+
                     </div>
 
                 </div>
 
 
+                {/* PREVIEW */}
+
                 <div className="chat-preview-row">
 
                     <div className="chat-preview">
+
                         {lastMessage}
+
                     </div>
 
 
                     {unreadCount > 0 && (
 
                         <div className="unread-badge">
+
                             {unreadCount > 99 ? "99+" : unreadCount}
+
                         </div>
 
                     )}
@@ -155,8 +222,10 @@ const ChatItem = ({
 
             </div>
 
-        </button>);
+        </button>
 
+    );
 };
+
 
 export default ChatItem;

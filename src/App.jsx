@@ -1,30 +1,28 @@
 import {
-    BrowserRouter, Routes, Route, Navigate
+    BrowserRouter,
+    Navigate,
+    Route,
+    Routes
 } from "react-router-dom";
-
 
 import MessengerPage from "./pages/messenger/MessengerPage.jsx";
 
 import LoginPage from "./pages/auth/LoginPage";
-
 import RegisterPage from "./pages/auth/RegisterPage";
 
 import ProfilePage from "./pages/profile/ProfilePage";
 
 import TasksPage from "./pages/task/TasksPage";
-
 import TaskCreatePage from "./pages/task/TaskCreatePage";
-
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import AuthorizedLayout from "./components/layout/AuthorizedLayout.jsx";
 
-
 import "./App.css";
 
-
 function App() {
+
 
     return (
 
@@ -32,28 +30,30 @@ function App() {
 
             <Routes>
 
-                {/* =================================================
-                    DEFAULT
-                ================================================= */}
+
+                {/* =============================================
+                DEFAULT
+            ============================================= */}
 
                 <Route
                     path="/"
-                    element={<Navigate
-                        to="/profile"
-                        replace
-                    />}
+                    element={
+                        <Navigate
+                            to="/profile"
+                            replace
+                        />
+                    }
                 />
 
 
-                {/* =================================================
-                    PUBLIC
-                ================================================= */}
+                {/* =============================================
+                PUBLIC ROUTES
+            ============================================= */}
 
                 <Route
                     path="/login"
                     element={<LoginPage/>}
                 />
-
 
                 <Route
                     path="/register"
@@ -61,19 +61,24 @@ function App() {
                 />
 
 
-                {/* =================================================
-                    PROTECTED
-                ================================================= */}
+                {/* =============================================
+                PROTECTED ROUTES
+            ============================================= */}
 
                 <Route
-                    element={<ProtectedRoute>
-                        <AuthorizedLayout/>
-                    </ProtectedRoute>}
+                    element={
+                        <ProtectedRoute>
+
+                            <AuthorizedLayout/>
+
+                        </ProtectedRoute>
+                    }
                 >
 
-                    {/* =================================================
-                        MESSENGER
-                    ================================================= */}
+
+                    {/* =========================================
+                    MESSENGER
+                ========================================= */}
 
                     <Route
                         path="/messenger"
@@ -81,9 +86,9 @@ function App() {
                     />
 
 
-                    {/* =================================================
-                        PROFILE
-                    ================================================= */}
+                    {/* =========================================
+                    PROFILE
+                ========================================= */}
 
                     <Route
                         path="/profile"
@@ -91,44 +96,46 @@ function App() {
                     />
 
 
-                    {/* =================================================
-                        TASKS
-                    ================================================= */}
+                    {/* =========================================
+                    TASKS
+                ========================================= */}
 
                     <Route
                         path="/tasks"
                         element={<TasksPage/>}
                     />
 
-
-                    {/* =================================================
-                        CREATE TASK
-                    ================================================= */}
-
                     <Route
                         path="/tasks/create"
                         element={<TaskCreatePage/>}
                     />
 
+
                 </Route>
 
 
-                {/* =================================================
-                    UNKNOWN
-                ================================================= */}
+                {/* =============================================
+                UNKNOWN ROUTES
+            ============================================= */}
 
                 <Route
                     path="*"
-                    element={<Navigate
-                        to="/profile"
-                        replace
-                    />}
+                    element={
+                        <Navigate
+                            to="/profile"
+                            replace
+                        />
+                    }
                 />
+
 
             </Routes>
 
-        </BrowserRouter>);
-}
+        </BrowserRouter>
 
+    );
+
+
+}
 
 export default App;

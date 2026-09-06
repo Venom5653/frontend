@@ -3,27 +3,21 @@
    ===================================================== */
 
 .authorized-layout {
-    min-height: 100vh;
+    position: relative;
 
     width: 100%;
-
-    position: relative;
+    min-height: 100vh;
 }
 
-
-/* =====================================================
-   CONTENT
-   ===================================================== */
 
 .authorized-content {
     width: 100%;
-
     min-height: 100vh;
 }
 
 
 /* =====================================================
-   NAVIGATION OPEN BUTTON
+   NAVIGATION BUTTON
    ===================================================== */
 
 .navigation-open-button {
@@ -36,7 +30,6 @@
     height: 44px;
 
     display: flex;
-
     align-items: center;
     justify-content: center;
 
@@ -49,7 +42,6 @@
     color: #d8cce1;
 
     font-size: 21px;
-
     line-height: 1;
 
     cursor: pointer;
@@ -90,6 +82,13 @@
 }
 
 
+.navigation-open-button:focus-visible {
+    outline: 2px solid #9b6cff;
+
+    outline-offset: 3px;
+}
+
+
 /* =====================================================
    MOBILE
    ===================================================== */
@@ -102,6 +101,17 @@
 
         width: 42px;
         height: 42px;
+    }
+
+
+    /*
+       Скрываем кнопку меню только тогда,
+       когда на мобильном открыт конкретный чат.
+    */
+
+    .authorized-layout.mobile-chat-is-open
+    .navigation-open-button {
+        display: none;
     }
 
 }
