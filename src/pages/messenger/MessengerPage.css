@@ -260,10 +260,6 @@ MESSAGES
 
 }
 
-/* =====================================================
-OLDER MESSAGES LOADING
-===================================================== */
-
 .older-messages-loading {
     display: flex;
 
@@ -281,11 +277,6 @@ OLDER MESSAGES LOADING
 
 
 }
-
-/* =====================================================
-MESSAGE ROW
-===================================================== */
-
 .message-row {
     width: 100%;
 
@@ -304,10 +295,6 @@ MESSAGE ROW
 .message-row.other {
     justify-content: flex-start;
 }
-
-/* =====================================================
-MESSAGE BUBBLE
-===================================================== */
 
 .message-bubble {
     max-width: min(65%, 600px);
@@ -347,10 +334,6 @@ MESSAGE BUBBLE
     border-bottom-left-radius: 5px;
 }
 
-/* =====================================================
-MESSAGE SENDER
-===================================================== */
-
 .message-sender {
     margin-bottom: 5px;
 
@@ -362,10 +345,6 @@ MESSAGE SENDER
 
 
 }
-
-/* =====================================================
-MESSAGE CONTENT
-===================================================== */
 
 .message-content {
     color: #f3f0f7;
@@ -381,10 +360,6 @@ MESSAGE CONTENT
 
     word-break: break-word;
 }
-
-/* =====================================================
-MESSAGE TIME
-===================================================== */
 
 .message-time {
     margin-top: 5px;
@@ -407,9 +382,6 @@ MESSAGE TIME
     color: #d1c2e3;
 }
 
-/* =====================================================
-READ STATUS
-===================================================== */
 
 .message-read-status {
     margin-left: 2px;
@@ -425,10 +397,6 @@ READ STATUS
 .message-read-status.read {
     opacity: 1;
 }
-
-/* =====================================================
-LOADING
-===================================================== */
 
 .messages-loading,
 .no-messages {
@@ -447,10 +415,6 @@ LOADING
     color: #776a82;
 
 }
-
-/* =====================================================
-EMPTY MESSAGES
-===================================================== */
 
 .no-messages > div {
     margin-bottom: 12px;
@@ -475,10 +439,6 @@ EMPTY MESSAGES
 
     font-size: 13px;
 }
-
-/* =====================================================
-NO CHAT
-===================================================== */
 
 .no-chat {
     flex: 1;
@@ -540,11 +500,6 @@ NO CHAT
 
 
 }
-
-/* =====================================================
-MESSAGE INPUT
-===================================================== */
-
 .message-input-container {
     display: flex;
 
@@ -613,9 +568,6 @@ MESSAGE INPUT
 
 }
 
-/* =====================================================
-SEND BUTTON
-===================================================== */
 
 .message-input-container button {
     width: 44px;
@@ -670,10 +622,6 @@ SEND BUTTON
 
 }
 
-/* =====================================================
-SCROLLBAR
-===================================================== */
-
 .messages-container::-webkit-scrollbar {
     width: 7px;
 }
@@ -695,10 +643,6 @@ SCROLLBAR
     background: #513174;
 }
 
-/* =====================================================
-TABLET
-===================================================== */
-
 @media (max-width: 900px) {
 
 
@@ -718,10 +662,6 @@ TABLET
         max-width: 75%;
     }
 }
-
-/* =====================================================
-MOBILE
-===================================================== */
 
 @media (max-width: 700px) {
 
@@ -857,11 +797,6 @@ MOBILE
         transform: scale(0.95);
     }
 
-
-    /* =========================================
-       HEADER
-    ========================================= */
-
     .chat-header {
         min-height: 70px;
 
@@ -869,11 +804,6 @@ MOBILE
 
         gap: 10px;
     }
-
-
-    /* =========================================
-       MESSAGES
-    ========================================= */
 
     .messages-container {
         padding: 15px;
@@ -883,11 +813,6 @@ MOBILE
     .message-bubble {
         max-width: 85%;
     }
-
-
-    /* =========================================
-       INPUT
-    ========================================= */
 
     .message-input-container {
         padding:
@@ -921,5 +846,17 @@ MOBILE
     .message-input-container textarea {
         font-size: 16px;
     }
+}
+.messenger-page {
+    position: relative;
+}
 
+
+.messenger-notifications {
+    position: absolute;
+
+    top: 12px;
+    right: 16px;
+
+    z-index: 1100;
 }

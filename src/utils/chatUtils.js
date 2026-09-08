@@ -1,53 +1,112 @@
+// =====================================================
+// GET OTHER USERNAME
+// =====================================================
+
 export const getOtherUsername = (chat, currentUsername) => {
 
     if (!chat) {
-
-        console.error("getOtherUsername: chat отсутствует");
-
         return null;
     }
+
+
+    const user1 = chat.user1Username?.trim();
+
+    const user2 = chat.user2Username?.trim();
 
 
     if (!currentUsername) {
 
-        console.error("getOtherUsername: currentUsername отсутствует");
+        return user1 || user2 || null;
 
+    }
+
+
+    const normalizedCurrent = currentUsername
+        .trim()
+        .toLowerCase();
+
+
+    if (user1 && user1.toLowerCase() === normalizedCurrent) {
+
+        return user2 || null;
+
+    }
+
+
+    if (user2 && user2.toLowerCase() === normalizedCurrent) {
+
+        return user1 || null;
+
+    }
+
+
+    return user1 || user2 || null;
+
+};
+
+
+// =====================================================
+// GET OTHER AVATAR
+// =====================================================
+
+export const getOtherAvatar = (chat, currentUsername) => {
+
+    if (!chat) {
         return null;
     }
 
 
-    const user1Username = chat.user1Username;
+    const user1 = chat.user1Username?.trim();
 
-    const user2Username = chat.user2Username;
+    const user2 = chat.user2Username?.trim();
 
-    if (user1Username && user1Username === currentUsername) {
 
-        return user2Username || null;
+    if (!currentUsername) {
+
+        return (chat.user1Avatar || chat.user2Avatar || null);
+
     }
 
 
-    // =========================================
+    const normalizedCurrent = currentUsername
+        .trim()
+        .toLowerCase();
+
+
+    // =============================================
+    // CURRENT USER = USER 1
+    // =============================================
+
+    if (user1 && user1.toLowerCase() === normalizedCurrent) {
+
+        return chat.user2Avatar || null;
+
+    }
+
+
+    // =============================================
     // CURRENT USER = USER 2
-    // =========================================
+    // =============================================
 
-    if (user2Username && user2Username === currentUsername) {
+    if (user2 && user2.toLowerCase() === normalizedCurrent) {
 
-        return user1Username || null;
+        return chat.user1Avatar || null;
+
     }
 
 
-    // =========================================
+    // =============================================
     // FALLBACK
-    // =========================================
+    // =============================================
 
-    console.error("Не удалось определить собеседника", {
-        currentUsername, user1Username, user2Username, chat
-    });
+    return (chat.user1Avatar || chat.user2Avatar || null);
 
-
-    return null;
 };
 
+
+// =====================================================
+// CHECK MESSAGE BELONGS TO CHAT
+// =====================================================
 
 export const messageBelongsToChat = (message, chat) => {
 
@@ -55,15 +114,28 @@ export const messageBelongsToChat = (message, chat) => {
         return false;
     }
 
+
+    // =============================================
+    // CHECK BY CHAT ID
+    // =============================================
+
     if (message.chatRoomId != null && chat.id != null) {
 
         return (Number(message.chatRoomId) === Number(chat.id));
+
     }
+
 
     if (message.chatId != null && chat.id != null) {
 
         return (Number(message.chatId) === Number(chat.id));
+
     }
+
+
+    // =============================================
+    // CHECK BY USERS
+    // =============================================
 
     const sender = message.senderUsername;
 
@@ -85,5 +157,14 @@ export const messageBelongsToChat = (message, chat) => {
     }
 
 
-    return ((sender === user1 && recipient === user2) || (sender === user2 && recipient === user1));
+    return (
+
+        (sender === user1 && recipient === user2)
+
+        ||
+
+        (sender === user2 && recipient === user1)
+
+    );
+
 };
