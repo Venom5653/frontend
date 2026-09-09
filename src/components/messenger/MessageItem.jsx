@@ -3,7 +3,9 @@ function MessageItem({
                      }) {
 
     const own = message.senderUsername && currentUsername && message.senderUsername
+        .trim()
         .toLowerCase() === currentUsername
+        .trim()
         .toLowerCase();
 
 
@@ -58,7 +60,6 @@ function MessageItem({
         </div>
 
     );
-
 }
 
 

@@ -1,16 +1,32 @@
 import {Client} from "@stomp/stompjs";
 
+
 let stompClient = null;
+
 let messageSubscription = null;
+
 let currentMessageHandler = null;
+
 let reconnectPromise = null;
+
 let readSubscription = null;
+
 let currentReadHandler = null;
+
 let statusSubscription = null;
+
 let currentStatusHandler = null;
+
 let notificationClient = null;
+
 let notificationSubscription = null;
+
 let currentNotificationHandler = null;
+
+
+// =====================================================
+// READ EVENTS
+// =====================================================
 
 export function subscribeToReadEvents(onRead) {
 
@@ -19,7 +35,7 @@ export function subscribeToReadEvents(onRead) {
 
     if (!stompClient) {
 
-        console.log("STOMP client ещё не создан. Подписка read будет создана после подключения.");
+        console.log("STOMP client ещё не создан. " + "Подписка read будет создана после подключения.");
 
         return;
     }
@@ -66,6 +82,11 @@ export function subscribeToReadEvents(onRead) {
     console.log("Подписка /user/queue/message-read создана");
 }
 
+
+// =====================================================
+// USER STATUS
+// =====================================================
+
 export function subscribeToUserStatus(onStatus) {
 
     currentStatusHandler = onStatus;
@@ -73,17 +94,25 @@ export function subscribeToUserStatus(onStatus) {
 
     if (!stompClient) {
 
-        console.log("STOMP client ещё не создан. Подписка на статус будет создана после подключения.");
+        console.log(
+            "STOMP client ещё не создан. " +
+            "Подписка на статус будет создана после подключения."
+        );
 
-        return;
+        return () => {};
+
     }
 
 
     if (!stompClient.connected) {
 
-        console.log("STOMP client ещё не подключен. Подписка на статус будет создана после подключения.");
+        console.log(
+            "STOMP client ещё не подключен. " +
+            "Подписка на статус будет создана после подключения."
+        );
 
-        return;
+        return () => {};
+
     }
 
 
@@ -91,54 +120,105 @@ export function subscribeToUserStatus(onStatus) {
 
         console.log("Подписка на статусы уже существует");
 
-        return;
+        return () => {};
+
     }
 
 
-    statusSubscription = stompClient.subscribe("/topic/user-status", message => {
+    const subscription = stompClient.subscribe(
+        "/topic/user-status",
+        message => {
 
-        try {
+            try {
 
-            const event = JSON.parse(message.body);
+                const event = JSON.parse(message.body);
 
-            console.log("USER STATUS:", event);
+                console.log("USER STATUS:", event);
 
 
-            if (currentStatusHandler) {
+                if (currentStatusHandler) {
 
-                currentStatusHandler(event);
+                    currentStatusHandler(event);
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Ошибка обработки USER STATUS:",
+                    error
+                );
 
             }
 
+        }
+    );
+
+
+    statusSubscription = subscription;
+
+
+    console.log(
+        "Подписка /topic/user-status создана"
+    );
+
+
+    return () => {
+
+        try {
+
+            subscription.unsubscribe();
+
         } catch (error) {
 
-            console.error("Ошибка обработки USER STATUS:", error);
+            console.error(
+                "WebSocket: ошибка unsubscribe status:",
+                error
+            );
 
         }
 
-    });
 
+        if (statusSubscription === subscription) {
 
-    console.log("Подписка /topic/user-status создана");
+            statusSubscription = null;
+
+        }
+
+    };
+
 }
+
+
+// =====================================================
+// CONNECT WEBSOCKET
+// =====================================================
 
 export function connectWebSocket(token, onConnected) {
 
     if (!token) {
+
         console.error("WebSocket: JWT отсутствует");
+
         return;
     }
+
 
     if (stompClient && stompClient.connected) {
 
         console.log("WebSocket уже подключен");
 
+
         if (onConnected) {
+
             onConnected();
+
         }
+
 
         return;
     }
+
 
     if (stompClient && !stompClient.connected) {
 
@@ -147,29 +227,41 @@ export function connectWebSocket(token, onConnected) {
         return;
     }
 
+
     console.log("WebSocket: создаём новое соединение");
+
 
     stompClient = new Client({
 
         brokerURL: import.meta.env.VITE_WS_URL,
 
+
         connectHeaders: {
+
             Authorization: `Bearer ${token}`
+
         },
 
+
         reconnectDelay: 5000,
+
 
         heartbeatIncoming: 10000,
 
         heartbeatOutgoing: 10000,
 
+
         debug: message => {
+
             console.log("STOMP:", message);
+
         },
+
 
         onConnect: () => {
 
             console.log("========== WS CONNECTED ==========");
+
 
             console.log("STOMP connected:", stompClient.connected);
 
@@ -203,33 +295,55 @@ export function connectWebSocket(token, onConnected) {
 
         },
 
+
         onStompError: frame => {
 
             console.error("STOMP error:", frame);
+
         },
+
 
         onWebSocketError: error => {
 
             console.error("WebSocket error:", error);
+
         },
+
 
         onDisconnect: () => {
 
             console.log("WebSocket отключен");
+
         }
+
     });
+
 
     stompClient.activate();
 }
 
-export function sendChatMessage(recipientUsername, content) {
 
-    if (!recipientUsername) {
+// =====================================================
+// SEND CHAT MESSAGE
+// =====================================================
 
-        console.error("WebSocket: recipientUsername отсутствует");
+export function sendChatMessage(chatId, content) {
+
+    // -------------------------------------------------
+    // CHAT ID
+    // -------------------------------------------------
+
+    if (!chatId) {
+
+        console.error("WebSocket: chatId отсутствует");
 
         return false;
     }
+
+
+    // -------------------------------------------------
+    // CONTENT
+    // -------------------------------------------------
 
     if (!content) {
 
@@ -238,12 +352,22 @@ export function sendChatMessage(recipientUsername, content) {
         return false;
     }
 
+
+    // -------------------------------------------------
+    // CLIENT
+    // -------------------------------------------------
+
     if (!stompClient) {
 
         console.error("STOMP client не существует");
 
         return false;
     }
+
+
+    // -------------------------------------------------
+    // CONNECTION
+    // -------------------------------------------------
 
     if (!stompClient.connected) {
 
@@ -252,18 +376,33 @@ export function sendChatMessage(recipientUsername, content) {
         return false;
     }
 
+
+    // -------------------------------------------------
+    // PUBLISH
+    // -------------------------------------------------
+
     try {
 
         stompClient.publish({
 
             destination: "/app/chat",
 
+
             body: JSON.stringify({
-                recipientUsername, content
+
+                chatId: Number(chatId),
+
+                content
+
             })
+
         });
 
-        console.log("WebSocket сообщение отправлено");
+
+        console.log("WebSocket сообщение отправлено:", {
+            chatId, content
+        });
+
 
         return true;
 
@@ -271,9 +410,16 @@ export function sendChatMessage(recipientUsername, content) {
 
         console.error("WebSocket: ошибка отправки сообщения:", error);
 
+
         return false;
+
     }
 }
+
+
+// =====================================================
+// SUBSCRIBE TO MESSAGES
+// =====================================================
 
 export function subscribeToMessages(onMessage) {
 
@@ -282,7 +428,7 @@ export function subscribeToMessages(onMessage) {
 
     if (!stompClient) {
 
-        console.log("STOMP client ещё не создан. Подписка будет создана после подключения.");
+        console.log("STOMP client ещё не создан. " + "Подписка будет создана после подключения.");
 
         return;
     }
@@ -319,17 +465,27 @@ export function subscribeToMessages(onMessage) {
 
         } catch (error) {
 
-            console.error("Ошибка обработки WebSocket сообщения:", error);
+            console.error("Ошибка обработки " + "WebSocket сообщения:", error);
 
         }
 
     });
 }
 
-export function sendMessage(recipientUsername, content) {
 
-    return sendChatMessage(recipientUsername, content);
+// =====================================================
+// SEND MESSAGE
+// =====================================================
+
+export function sendMessage(chatId, content) {
+
+    return sendChatMessage(chatId, content);
 }
+
+
+// =====================================================
+// RECONNECT WEBSOCKET
+// =====================================================
 
 export async function reconnectWebSocket(newToken) {
 
@@ -340,6 +496,7 @@ export async function reconnectWebSocket(newToken) {
         return;
     }
 
+
     if (reconnectPromise) {
 
         console.log("WebSocket: переподключение уже выполняется");
@@ -347,15 +504,28 @@ export async function reconnectWebSocket(newToken) {
         return reconnectPromise;
     }
 
+
     reconnectPromise = (async () => {
 
         console.log("WebSocket: переподключение с новым JWT");
 
+
+        // -------------------------------------------------
+        // SAVE HANDLERS
+        // -------------------------------------------------
+
         const handler = currentMessageHandler;
+
 
         const readHandler = currentReadHandler;
 
+
         const statusHandler = currentStatusHandler;
+
+
+        // -------------------------------------------------
+        // UNSUBSCRIBE MESSAGES
+        // -------------------------------------------------
 
         if (messageSubscription) {
 
@@ -366,10 +536,18 @@ export async function reconnectWebSocket(newToken) {
             } catch (error) {
 
                 console.error("WebSocket: ошибка unsubscribe:", error);
+
             }
 
+
             messageSubscription = null;
+
         }
+
+
+        // -------------------------------------------------
+        // UNSUBSCRIBE READ
+        // -------------------------------------------------
 
         if (readSubscription) {
 
@@ -380,10 +558,18 @@ export async function reconnectWebSocket(newToken) {
             } catch (error) {
 
                 console.error("WebSocket: ошибка unsubscribe read:", error);
+
             }
 
+
             readSubscription = null;
+
         }
+
+
+        // -------------------------------------------------
+        // UNSUBSCRIBE STATUS
+        // -------------------------------------------------
 
         if (statusSubscription) {
 
@@ -394,10 +580,18 @@ export async function reconnectWebSocket(newToken) {
             } catch (error) {
 
                 console.error("WebSocket: ошибка unsubscribe status:", error);
+
             }
 
+
             statusSubscription = null;
+
         }
+
+
+        // -------------------------------------------------
+        // DEACTIVATE CLIENT
+        // -------------------------------------------------
 
         if (stompClient) {
 
@@ -408,20 +602,36 @@ export async function reconnectWebSocket(newToken) {
             } catch (error) {
 
                 console.error("WebSocket: ошибка отключения:", error);
+
             }
+
         }
+
 
         stompClient = null;
 
+
+        // -------------------------------------------------
+        // RESTORE HANDLERS
+        // -------------------------------------------------
+
         currentMessageHandler = handler;
+
 
         currentReadHandler = readHandler;
 
+
         currentStatusHandler = statusHandler;
+
+
+        // -------------------------------------------------
+        // CONNECT WITH NEW TOKEN
+        // -------------------------------------------------
 
         connectWebSocket(newToken, () => {
 
             console.log("WebSocket: успешно переподключён");
+
         });
 
     })().finally(() => {
@@ -430,73 +640,135 @@ export async function reconnectWebSocket(newToken) {
 
     });
 
+
     return reconnectPromise;
 }
 
+
+// =====================================================
+// DISCONNECT WEBSOCKET
+// =====================================================
+
 export async function disconnectWebSocket() {
+
+    // -------------------------------------------------
+    // MESSAGES
+    // -------------------------------------------------
 
     if (messageSubscription) {
 
         try {
+
             messageSubscription.unsubscribe();
+
         } catch (error) {
+
             console.error("WebSocket: ошибка unsubscribe:", error);
+
         }
 
+
         messageSubscription = null;
+
     }
+
+
+    // -------------------------------------------------
+    // READ
+    // -------------------------------------------------
 
     if (readSubscription) {
 
         try {
+
             readSubscription.unsubscribe();
+
         } catch (error) {
+
             console.error("WebSocket: ошибка unsubscribe read:", error);
+
         }
 
+
         readSubscription = null;
+
     }
+
+
+    // -------------------------------------------------
+    // STATUS
+    // -------------------------------------------------
 
     if (statusSubscription) {
 
         try {
+
             statusSubscription.unsubscribe();
+
         } catch (error) {
+
             console.error("WebSocket: ошибка unsubscribe status:", error);
+
         }
 
+
         statusSubscription = null;
+
     }
 
+
+    // -------------------------------------------------
+    // CLEAR HANDLERS
+    // -------------------------------------------------
+
     currentMessageHandler = null;
+
     currentReadHandler = null;
+
     currentStatusHandler = null;
+
+
+    // -------------------------------------------------
+    // DEACTIVATE
+    // -------------------------------------------------
 
     if (stompClient) {
 
         try {
+
             await stompClient.deactivate();
+
         } catch (error) {
+
             console.error("WebSocket: ошибка disconnect:", error);
+
         }
+
     }
 
+
     stompClient = null;
+
     reconnectPromise = null;
+
 
     console.log("WebSocket отключен");
 }
 
 
-/*
- * Открыть чат
- */
+// =====================================================
+// OPEN CHAT
+// =====================================================
+
 export function openChat(chatId) {
 
     if (!chatId) {
+
         console.warn("CHAT OPEN: chatId отсутствует");
+
         return false;
     }
+
 
     if (!stompClient || !stompClient.connected) {
 
@@ -505,183 +777,180 @@ export function openChat(chatId) {
         return false;
     }
 
+
     stompClient.publish({
 
         destination: "/app/chat/open",
 
+
         body: JSON.stringify({
+
             chatId: Number(chatId)
+
         })
+
     });
 
+
     console.log("CHAT OPEN:", chatId);
+
 
     return true;
 }
 
+
+// =====================================================
+// CLOSE CHAT
+// =====================================================
+
 export function closeChat() {
 
     if (!stompClient || !stompClient.connected) {
+
         return false;
     }
+
 
     stompClient.publish({
 
         destination: "/app/chat/close",
 
+
         body: "{}"
+
     });
+
 
     console.log("CHAT CLOSE");
 
+
     return true;
 }
-export function connectNotificationWebSocket(
-    token,
-    onNotification
-) {
+
+
+// =====================================================
+// NOTIFICATION WEBSOCKET
+// =====================================================
+
+export function connectNotificationWebSocket(token, onNotification) {
 
     if (!token) {
 
-        console.error(
-            "Notification WebSocket: JWT отсутствует"
-        );
+        console.error("Notification WebSocket: JWT отсутствует");
 
         return;
     }
 
 
-    currentNotificationHandler =
-        onNotification;
+    currentNotificationHandler = onNotification;
 
 
-    if (
-        notificationClient &&
-        notificationClient.connected
-    ) {
+    if (notificationClient && notificationClient.connected) {
 
-        console.log(
-            "Notification WebSocket уже подключен"
-        );
+        console.log("Notification WebSocket уже подключен");
 
         return;
     }
 
 
-    console.log(
-        "Notification WebSocket: создаём соединение"
-    );
+    console.log("Notification WebSocket: создаём соединение");
 
 
     notificationClient = new Client({
 
-        brokerURL:
-        import.meta.env.VITE_NOTIFICATION_WS_URL,
+        brokerURL: import.meta.env.VITE_NOTIFICATION_WS_URL,
+
 
         connectHeaders: {
 
-            Authorization:
-                `Bearer ${token}`
+            Authorization: `Bearer ${token}`
 
         },
 
+
         reconnectDelay: 5000,
+
 
         heartbeatIncoming: 10000,
 
         heartbeatOutgoing: 10000,
 
+
         debug: message => {
 
-            console.log(
-                "NOTIFICATION STOMP:",
-                message
-            );
+            console.log("NOTIFICATION STOMP:", message);
+
         },
 
 
         onConnect: () => {
 
-            console.log(
-                "========== NOTIFICATION WS CONNECTED =========="
-            );
+            console.log("========== NOTIFICATION WS CONNECTED ==========");
 
 
-            notificationSubscription =
-                notificationClient.subscribe(
-                    "/user/queue/notifications",
-                    message => {
+            notificationSubscription = notificationClient.subscribe("/user/queue/notifications",
 
-                        try {
+                message => {
 
-                            const notification =
-                                JSON.parse(
-                                    message.body
-                                );
+                    try {
+
+                        const notification = JSON.parse(message.body);
 
 
-                            console.log(
-                                "NEW NOTIFICATION:",
-                                notification
-                            );
+                        console.log("NEW NOTIFICATION:", notification);
 
 
-                            if (
-                                currentNotificationHandler
-                            ) {
+                        if (currentNotificationHandler) {
 
-                                currentNotificationHandler(
-                                    notification
-                                );
+                            currentNotificationHandler(notification);
 
-                            }
-
-                        } catch (error) {
-
-                            console.error(
-                                "Ошибка обработки notification:",
-                                error
-                            );
                         }
+
+                    } catch (error) {
+
+                        console.error("Ошибка обработки notification:", error);
+
                     }
-                );
+
+                });
 
 
-            console.log(
-                "Подписка /user/queue/notifications создана"
-            );
+            console.log("Подписка /user/queue/notifications создана");
+
         },
 
 
         onStompError: frame => {
 
-            console.error(
-                "Notification STOMP error:",
-                frame
-            );
+            console.error("Notification STOMP error:", frame);
+
         },
 
 
         onWebSocketError: error => {
 
-            console.error(
-                "Notification WebSocket error:",
-                error
-            );
+            console.error("Notification WebSocket error:", error);
+
         },
 
 
         onDisconnect: () => {
 
-            console.log(
-                "Notification WebSocket отключен"
-            );
+            console.log("Notification WebSocket отключен");
+
         }
+
     });
 
 
     notificationClient.activate();
 }
+
+
+// =====================================================
+// DISCONNECT NOTIFICATION WEBSOCKET
+// =====================================================
+
 export async function disconnectNotificationWebSocket() {
 
     if (notificationSubscription) {
@@ -692,13 +961,13 @@ export async function disconnectNotificationWebSocket() {
 
         } catch (error) {
 
-            console.error(
-                "Ошибка unsubscribe notification:",
-                error
-            );
+            console.error("Ошибка unsubscribe notification:", error);
+
         }
 
+
         notificationSubscription = null;
+
     }
 
 
@@ -713,18 +982,15 @@ export async function disconnectNotificationWebSocket() {
 
         } catch (error) {
 
-            console.error(
-                "Ошибка отключения notification WebSocket:",
-                error
-            );
+            console.error("Ошибка отключения notification WebSocket:", error);
+
         }
+
     }
 
 
     notificationClient = null;
 
 
-    console.log(
-        "Notification WebSocket отключен"
-    );
+    console.log("Notification WebSocket отключен");
 }

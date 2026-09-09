@@ -5,29 +5,28 @@ import {
 import messengerApi from "../../api/messenger/messengerApi.js";
 
 
-function useChats(currentUsername) {
+function useChats(currentUsername, currentUserId) {
 
 
-// =====================================================
-// STATE
-// =====================================================
+    // =====================================================
+    // STATE
+    // =====================================================
 
     const [chats, setChats] = useState([]);
-
 
     const [error, setError] = useState("");
 
 
-// =====================================================
-// REFS
-// =====================================================
+    // =====================================================
+    // REFS
+    // =====================================================
 
     const chatsRef = useRef([]);
 
 
-// =====================================================
-// SYNC REF
-// =====================================================
+    // =====================================================
+    // SYNC REF
+    // =====================================================
 
     useEffect(() => {
 
@@ -36,26 +35,96 @@ function useChats(currentUsername) {
     }, [chats]);
 
 
-// =====================================================
-// LOAD CHATS
-// =====================================================
+    // =====================================================
+    // NORMALIZE CHAT
+    // =====================================================
+
+    const normalizeChat = useCallback((chat, previousChat = null) => {
+
+        if (!chat) {
+            return null;
+        }
+
+
+        return {
+
+            ...chat,
+
+            // -------------------------------------------------
+            // Frontend-only fields
+            // -------------------------------------------------
+
+            lastMessage: chat.lastMessage ?? previousChat?.lastMessage ?? "",
+
+            lastMessageCreatedAt: chat.lastMessageCreatedAt ?? previousChat?.lastMessageCreatedAt ?? chat.lastMessageAt ?? null,
+
+            unreadCount: chat.unreadCount ?? previousChat?.unreadCount ?? 0
+
+        };
+
+    }, []);
+
+
+    // =====================================================
+    // LOAD CHATS
+    // =====================================================
 
     const loadChats = useCallback(async () => {
 
+        if (!currentUserId) {
+
+            console.warn("ID текущего пользователя отсутствует");
+
+            return [];
+
+        }
+
+
         try {
 
-            const response = await messengerApi.get("/api/chats");
+            const response = await messengerApi.get("/api/chats", {
+                headers: {
+                    "X-User-Id": currentUserId
+                }
+            });
 
 
             const chatList = Array.isArray(response.data) ? response.data : [];
 
 
-            setChats(chatList);
+            const normalizedChats = chatList.map(chat => {
 
-            chatsRef.current = chatList;
+                const previousChat = chatsRef.current.find(previous => Number(previous.id) === Number(chat.id));
 
 
-            return chatList;
+                return normalizeChat(chat, previousChat);
+
+            });
+
+
+            // -------------------------------------------------
+            // Sort by last message
+            // -------------------------------------------------
+
+            normalizedChats.sort((a, b) => {
+
+                const dateA = new Date(a.lastMessageCreatedAt || a.lastMessageAt || a.createdAt).getTime();
+
+
+                const dateB = new Date(b.lastMessageCreatedAt || b.lastMessageAt || b.createdAt).getTime();
+
+
+                return dateB - dateA;
+
+            });
+
+
+            setChats(normalizedChats);
+
+            chatsRef.current = normalizedChats;
+
+
+            return normalizedChats;
 
         } catch (error) {
 
@@ -69,69 +138,132 @@ function useChats(currentUsername) {
 
         }
 
-    }, []);
+    }, [currentUserId, normalizeChat]);
 
 
-// =====================================================
-// INITIAL LOAD
-// =====================================================
+    // =====================================================
+    // INITIAL LOAD
+    // =====================================================
 
     useEffect(() => {
 
-        if (!currentUsername) {
+        if (!currentUsername || !currentUserId) {
             return;
         }
 
 
         loadChats();
 
-    }, [currentUsername, loadChats]);
+    }, [currentUsername, currentUserId, loadChats]);
 
 
-// =====================================================
-// CREATE CHAT REQUEST
-// =====================================================
+    // =====================================================
+    // CREATE PRIVATE CHAT REQUEST
+    // =====================================================
 
-    const createChatRequest = async username => {
+    const createChatRequest = useCallback(async username => {
 
-        const response = await messengerApi.post("/api/chats", {
+        if (!currentUserId) {
+
+            throw new Error("ID текущего пользователя отсутствует");
+
+        }
+
+
+        const response = await messengerApi.post("/api/chats/private", {
             username
+        }, {
+            headers: {
+                "X-User-Id": currentUserId
+            }
         });
 
 
-        return response.data;
+        return normalizeChat(response.data);
 
-    };
+    }, [currentUserId, normalizeChat]);
+
+    // =====================================================
+    // CREATE GROUP CHAT REQUEST
+    // =====================================================
+
+    const createGroupRequest = useCallback(async (name, userIds) => {
+
+        if (!currentUserId) {
+
+            throw new Error("ID текущего пользователя отсутствует");
+
+        }
 
 
-// =====================================================
-// ADD OR UPDATE CHAT
-// =====================================================
+        const response = await messengerApi.post(
+            "/api/chats/group",
+            {
+                name,
+                userIds
+            },
+            {
+                headers: {
+                    "X-User-Id": currentUserId
+                }
+            }
+        );
+
+
+        return normalizeChat(response.data);
+
+    }, [currentUserId, normalizeChat]);
+
+    // =====================================================
+    // ADD OR UPDATE CHAT
+    // =====================================================
 
     const addOrUpdateChat = newChat => {
 
+        if (!newChat) {
+            return;
+        }
+
+
         setChats(previous => {
 
-            const exists = previous.some(chat => chat.id === newChat.id);
+            const previousChat = previous.find(chat => Number(chat.id) === Number(newChat.id));
+
+
+            const normalizedChat = normalizeChat(newChat, previousChat);
+
+
+            const exists = Boolean(previousChat);
 
 
             const updated = exists
 
                 ? previous.map(chat =>
 
-                    chat.id === newChat.id
+                    Number(chat.id) === Number(normalizedChat.id)
 
-                        ? newChat
+                        ? normalizedChat
 
                         : chat)
 
-                : [
+                : [normalizedChat, ...previous];
 
-                    newChat,
 
-                    ...previous
+            // -------------------------------------------------
+            // Sort
+            // -------------------------------------------------
 
-                ];
+            updated.sort((a, b) => {
+
+                const dateA = new Date(a.lastMessageCreatedAt || a.lastMessageAt || a.createdAt).getTime();
+
+
+                const dateB = new Date(b.lastMessageCreatedAt || b.lastMessageAt || b.createdAt).getTime();
+
+
+                return dateB - dateA;
+
+            });
 
 
             chatsRef.current = updated;
@@ -144,9 +276,9 @@ function useChats(currentUsername) {
     };
 
 
-// =====================================================
-// UPDATE CHAT AFTER MESSAGE
-// =====================================================
+    // =====================================================
+    // UPDATE CHAT AFTER MESSAGE
+    // =====================================================
 
     const updateChatAfterMessage = (chatId, message, unreadCount) => {
 
@@ -169,6 +301,9 @@ function useChats(currentUsername) {
 
                     lastMessageCreatedAt: message.createdAt,
 
+                    // Backend поле также обновляем
+                    lastMessageAt: message.createdAt,
+
                     unreadCount
 
                 };
@@ -176,13 +311,21 @@ function useChats(currentUsername) {
             });
 
 
-            updated.sort((a, b) =>
+            // -------------------------------------------------
+            // Sort by latest message
+            // -------------------------------------------------
 
-                new Date(b.lastMessageCreatedAt || b.createdAt)
+            updated.sort((a, b) => {
 
-                -
+                const dateA = new Date(a.lastMessageCreatedAt || a.lastMessageAt || a.createdAt).getTime();
 
-                new Date(a.lastMessageCreatedAt || a.createdAt));
+
+                const dateB = new Date(b.lastMessageCreatedAt || b.lastMessageAt || b.createdAt).getTime();
+
+
+                return dateB - dateA;
+
+            });
 
 
             chatsRef.current = updated;
@@ -195,9 +338,9 @@ function useChats(currentUsername) {
     };
 
 
-// =====================================================
-// MARK CHAT AS READ
-// =====================================================
+    // =====================================================
+    // MARK CHAT AS READ
+    // =====================================================
 
     const markChatAsRead = chatId => {
 
@@ -208,11 +351,7 @@ function useChats(currentUsername) {
                 Number(chat.id) === Number(chatId)
 
                     ? {
-
-                        ...chat,
-
-                        unreadCount: 0
-
+                        ...chat, unreadCount: 0
                     }
 
                     : chat);
@@ -227,10 +366,30 @@ function useChats(currentUsername) {
 
     };
 
+    const removeChat = chatId => {
 
-// =====================================================
-// RETURN
-// =====================================================
+        setChats(previous => {
+
+            const updated =
+                previous.filter(
+                    chat =>
+                        Number(chat.id) !==
+                        Number(chatId)
+                );
+
+
+            chatsRef.current = updated;
+
+
+            return updated;
+
+        });
+
+    };
+
+    // =====================================================
+    // RETURN
+    // =====================================================
 
     return {
 
@@ -246,11 +405,15 @@ function useChats(currentUsername) {
 
         createChatRequest,
 
+        createGroupRequest,
+
         addOrUpdateChat,
 
         updateChatAfterMessage,
 
-        markChatAsRead
+        markChatAsRead,
+
+        removeChat
 
     };
 

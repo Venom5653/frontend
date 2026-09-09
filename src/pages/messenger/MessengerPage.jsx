@@ -1,5 +1,5 @@
 import {
-    useEffect
+    useEffect, useState
 } from "react";
 
 import {
@@ -7,15 +7,11 @@ import {
 } from "react-router-dom";
 
 import ChatSidebar from "../../components/messenger/ChatSidebar.jsx";
-
 import EmptyChat from "../../components/messenger/EmptyChat.jsx";
-
 import ChatHeader from "../../components/messenger/ChatHeader.jsx";
-
 import MessagesContainer from "../../components/messenger/MessagesContainer.jsx";
-
 import MessageInput from "../../components/messenger/MessageInput.jsx";
-
+import GroupChatSettingsModal from "../../components/messenger/GroupChatSettingsModal.jsx";
 import NotificationBell from "../../components/notifications/NotificationBell.jsx";
 
 import useMessengerController from "../../hooks/messenger/useMessengerController.js";
@@ -29,77 +25,70 @@ import "./MessengerPage.css";
 
 function MessengerPage() {
 
-
-    // =====================================================
-    // OUTLET
-    // =====================================================
-
     const {
         setMobileChatOpen
     } = useOutletContext();
 
 
-    // =====================================================
-    // MESSENGER CONTROLLER
-    // =====================================================
+    const [groupSettingsOpen, setGroupSettingsOpen] = useState(false);
+
 
     const {
 
+        currentUser,
         currentUsername,
-
         loadingCurrentUser,
 
         chats,
-
         selectedChat,
 
         messages,
 
         content,
+        setContent,
 
         onlineUsers,
 
         error,
 
         loadingMessages,
-
         loadingOlderMessages,
 
         messagesContainerRef,
 
         notifications,
-
         unreadCount,
 
         deleteNotification,
-
         deleteAllNotifications,
 
-        setContent,
-
         selectChat,
-
         openChatById,
 
         createChat,
+        createGroup,
 
         closeChat,
-
         sendMessage,
 
-        handleMessagesScroll
+        handleMessagesScroll,
+
+        updateGroup,
+        uploadAvatar,
+        deleteAvatar,
+        addMember,
+        removeMember,
+        changeRole,
+        transferOwnership,
+        leaveGroup,
+        deleteGroup
 
     } = useMessengerController();
 
 
-    // =====================================================
-    // MOBILE
-    // =====================================================
-
     useEffect(() => {
 
         setMobileChatOpen(Boolean(selectedChat));
-
 
         return () => {
 
@@ -110,21 +99,29 @@ function MessengerPage() {
     }, [selectedChat, setMobileChatOpen]);
 
 
-    // =====================================================
-    // SELECTED USER
-    // =====================================================
+    useEffect(() => {
 
-    const selectedUsername = getOtherUsername(selectedChat, currentUsername);
+        if (selectedChat?.type !== "GROUP") {
+
+            setGroupSettingsOpen(false);
+
+        }
+
+    }, [selectedChat]);
 
 
-    const selectedAvatar = getOtherAvatar(selectedChat, currentUsername);
+    const isGroup = selectedChat?.type === "GROUP";
 
 
-    // =====================================================
-    // CLOSE CHAT
-    // =====================================================
+    const selectedUsername = isGroup ? selectedChat?.name : getOtherUsername(selectedChat, currentUsername);
+
+
+    const selectedAvatar = isGroup ? selectedChat?.avatar : getOtherAvatar(selectedChat, currentUsername);
+
 
     const handleCloseChat = () => {
+
+        setGroupSettingsOpen(false);
 
         closeChat();
 
@@ -133,18 +130,30 @@ function MessengerPage() {
     };
 
 
-    // =====================================================
-    // LOADING
-    // =====================================================
+    const handleOpenGroupSettings = () => {
+
+        if (!isGroup) {
+            return;
+        }
+
+        setGroupSettingsOpen(true);
+
+    };
+
+
+    const handleCloseGroupSettings = () => {
+
+        setGroupSettingsOpen(false);
+
+    };
+
 
     if (loadingCurrentUser) {
 
         return (
 
             <div className="messenger-page">
-
                 Загрузка Messenger...
-
             </div>
 
         );
@@ -152,18 +161,9 @@ function MessengerPage() {
     }
 
 
-    // =====================================================
-    // RENDER
-    // =====================================================
-
     return (
 
         <div className="messenger-page">
-
-
-            {/* =========================================
-                NOTIFICATIONS
-            ========================================= */}
 
             <div className="messenger-notifications">
 
@@ -184,18 +184,9 @@ function MessengerPage() {
             </div>
 
 
-            {/* =========================================
-                MESSENGER CONTAINER
-            ========================================= */}
-
             <div
                 className={`messenger-container ${selectedChat ? "mobile-chat-open" : ""}`}
             >
-
-
-                {/* =====================================
-                    SIDEBAR
-                ===================================== */}
 
                 <ChatSidebar
 
@@ -209,17 +200,14 @@ function MessengerPage() {
 
                     onCreateChat={createChat}
 
+                    onCreateGroup={createGroup}
+
                     error={error}
 
                 />
 
 
-                {/* =====================================
-                    CHAT
-                ===================================== */}
-
                 <main className="messenger-chat">
-
 
                     {!selectedChat ? (
 
@@ -229,7 +217,6 @@ function MessengerPage() {
 
                         <>
 
-
                             <ChatHeader
 
                                 username={selectedUsername}
@@ -238,7 +225,11 @@ function MessengerPage() {
 
                                 onlineUsers={onlineUsers}
 
+                                isGroup={isGroup}
+
                                 onBack={handleCloseChat}
+
+                                onGroupSettings={handleOpenGroupSettings}
 
                             />
 
@@ -277,6 +268,39 @@ function MessengerPage() {
                 </main>
 
             </div>
+
+
+            {groupSettingsOpen && selectedChat && isGroup && (
+
+                <GroupChatSettingsModal
+
+                    chat={selectedChat}
+
+                    currentUserId={currentUser?.id}
+
+                    onClose={handleCloseGroupSettings}
+
+                    onUpdateGroup={updateGroup}
+
+                    onUploadAvatar={uploadAvatar}
+
+                    onDeleteAvatar={deleteAvatar}
+
+                    onAddMember={addMember}
+
+                    onRemoveMember={removeMember}
+
+                    onChangeRole={changeRole}
+
+                    onTransferOwnership={transferOwnership}
+
+                    onLeaveGroup={leaveGroup}
+
+                    onDeleteGroup={deleteGroup}
+
+                />
+
+            )}
 
         </div>
 

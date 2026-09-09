@@ -1,30 +1,21 @@
 import {
-    useEffect,
-    useState
+    useEffect, useState
 } from "react";
 
 import {
     isUserOnline
 } from "../../services/messenger/presenceService.js";
 
-
-const API_URL =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:8080";
+import {
+    getAvatarUrl, getAvatarLetter
+} from "../../utils/chatUtils.js";
 
 
 function ChatHeader({
-                        username,
-                        avatar,
-                        onlineUsers,
-                        onBack
+                        username, avatar, onlineUsers, isGroup, onBack, onGroupSettings
                     }) {
 
-    const [
-        avatarError,
-        setAvatarError
-    ] =
-        useState(false);
+    const [avatarError, setAvatarError] = useState(false);
 
 
     useEffect(() => {
@@ -34,74 +25,14 @@ function ChatHeader({
     }, [avatar]);
 
 
-    const getAvatarUrl = () => {
+    const avatarUrl = getAvatarUrl(avatar);
 
-        if (
-            !avatar ||
-            typeof avatar !== "string"
-        ) {
-
-            return null;
-
-        }
-
-
-        const value =
-            avatar.trim();
-
-
-        if (!value) {
-            return null;
-        }
-
-
-        if (
-            value.startsWith("http://") ||
-            value.startsWith("https://")
-        ) {
-
-            return value;
-
-        }
-
-
-        if (
-            value.startsWith("/")
-        ) {
-
-            return `${API_URL}${value}`;
-
-        }
-
-
-        return `${API_URL}/${value}`;
-
-    };
-
-
-    const getAvatarLetter = () => {
-
-        if (!username) {
-            return "?";
-        }
-
-
-        return username
-            .trim()
-            .charAt(0)
-            .toUpperCase();
-
-    };
-
-
-    const avatarUrl =
-        getAvatarUrl();
+    const avatarLetter = getAvatarLetter(username);
 
 
     return (
 
         <header className="chat-header">
-
 
             <button
                 type="button"
@@ -115,23 +46,18 @@ function ChatHeader({
 
             <div className="chat-avatar-header">
 
-                {avatarUrl &&
-                !avatarError ? (
+                {avatarUrl && !avatarError ? (
 
                     <img
                         src={avatarUrl}
                         alt={username || "Avatar"}
-                        onError={() =>
-                            setAvatarError(true)
-                        }
+                        onError={() => setAvatarError(true)}
                     />
 
                 ) : (
 
                     <span>
-
-                        {getAvatarLetter()}
-
+                        {avatarLetter}
                     </span>
 
                 )}
@@ -142,29 +68,31 @@ function ChatHeader({
             <div className="chat-header-info">
 
                 <h2>
-
-                    {username ||
-                        "Пользователь"}
-
+                    {username || "Пользователь"}
                 </h2>
-
 
                 <span>
 
-                    {isUserOnline(
-                        onlineUsers,
-                        username
-                    )
-
-                        ? "В сети"
-
-                        : "Не в сети"
-
-                    }
+                    {isGroup ? "Группа" : isUserOnline(onlineUsers, username) ? "В сети" : "Не в сети"}
 
                 </span>
 
             </div>
+
+
+            {isGroup && (
+
+                <button
+                    type="button"
+                    className="group-settings-button"
+                    onClick={onGroupSettings}
+                    aria-label="Настройки группы"
+                    title="Настройки группы"
+                >
+                    ⚙
+                </button>
+
+            )}
 
         </header>
 

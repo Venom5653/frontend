@@ -1,5 +1,8 @@
 import {
-    useCallback, useLayoutEffect, useRef, useState
+    useCallback,
+    useLayoutEffect,
+    useRef,
+    useState
 } from "react";
 
 import messengerApi from "../../api/messenger/messengerApi.js";
@@ -17,15 +20,11 @@ function useChatMessages() {
 
     const [messages, setMessages] = useState([]);
 
-
     const [loadingMessages, setLoadingMessages] = useState(false);
-
 
     const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
 
-
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
-
 
     const [error, setError] = useState("");
 
@@ -36,18 +35,13 @@ function useChatMessages() {
 
     const messagesContainerRef = useRef(null);
 
-
     const selectedChatRef = useRef(null);
-
 
     const shouldScrollToBottomRef = useRef(true);
 
-
     const isOpeningChatRef = useRef(false);
 
-
     const previousScrollRef = useRef(null);
-
 
     const loadingOlderMessagesRef = useRef(false);
 
@@ -66,10 +60,14 @@ function useChatMessages() {
         }
 
 
-        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+        const distanceFromBottom =
+            container.scrollHeight -
+            container.scrollTop -
+            container.clientHeight;
 
 
-        shouldScrollToBottomRef.current = distanceFromBottom <= 150;
+        shouldScrollToBottomRef.current =
+            distanceFromBottom <= 150;
 
     };
 
@@ -105,27 +103,38 @@ function useChatMessages() {
 
         try {
 
-            const response = await messengerApi.get(`/api/messages/chat/${chat.id}`, {
-                params: {
-                    limit: PAGE_SIZE
+            const response = await messengerApi.get(
+                `/api/messages/chat/${chat.id}`,
+                {
+                    params: {
+                        limit: PAGE_SIZE
+                    }
                 }
-            });
+            );
 
 
-            const loadedMessages = Array.isArray(response.data) ? response.data : [];
+            const loadedMessages =
+                Array.isArray(response.data)
+                    ? response.data
+                    : [];
 
 
             setMessages(loadedMessages);
 
 
-            setHasMoreMessages(loadedMessages.length === PAGE_SIZE);
+            setHasMoreMessages(
+                loadedMessages.length === PAGE_SIZE
+            );
 
 
             return loadedMessages;
 
         } catch (error) {
 
-            console.error("Ошибка загрузки сообщений:", error);
+            console.error(
+                "Ошибка загрузки сообщений:",
+                error
+            );
 
 
             setMessages([]);
@@ -133,7 +142,10 @@ function useChatMessages() {
             setHasMoreMessages(false);
 
 
-            setError(error.response?.data?.message || "Не удалось загрузить сообщения");
+            setError(
+                error.response?.data?.message ||
+                "Не удалось загрузить сообщения"
+            );
 
 
             return [];
@@ -153,13 +165,17 @@ function useChatMessages() {
 
     const loadOlderMessages = async () => {
 
-        const selectedChat = selectedChatRef.current;
+        const selectedChat =
+            selectedChatRef.current;
 
 
-        if (loadingOlderMessagesRef.current || !selectedChat || !messages.length || !hasMoreMessages) {
-
+        if (
+            loadingOlderMessagesRef.current ||
+            !selectedChat ||
+            !messages.length ||
+            !hasMoreMessages
+        ) {
             return;
-
         }
 
 
@@ -171,7 +187,8 @@ function useChatMessages() {
         }
 
 
-        const container = messagesContainerRef.current;
+        const container =
+            messagesContainerRef.current;
 
 
         if (!container) {
@@ -195,18 +212,25 @@ function useChatMessages() {
 
         try {
 
-            const response = await messengerApi.get(`/api/messages/chat/${selectedChat.id}`, {
-                params: {
+            const response =
+                await messengerApi.get(
+                    `/api/messages/chat/${selectedChat.id}`,
+                    {
+                        params: {
 
-                    beforeId: oldestMessage.id,
+                            beforeId: oldestMessage.id,
 
-                    limit: PAGE_SIZE
+                            limit: PAGE_SIZE
 
-                }
-            });
+                        }
+                    }
+                );
 
 
-            const olderMessages = Array.isArray(response.data) ? response.data : [];
+            const olderMessages =
+                Array.isArray(response.data)
+                    ? response.data
+                    : [];
 
 
             if (!olderMessages.length) {
@@ -220,10 +244,19 @@ function useChatMessages() {
 
             setMessages(previous => {
 
-                const existingIds = new Set(previous.map(message => message.id));
+                const existingIds =
+                    new Set(
+                        previous.map(
+                            message => message.id
+                        )
+                    );
 
 
-                const uniqueOlderMessages = olderMessages.filter(message => !existingIds.has(message.id));
+                const uniqueOlderMessages =
+                    olderMessages.filter(
+                        message =>
+                            !existingIds.has(message.id)
+                    );
 
 
                 if (!uniqueOlderMessages.length) {
@@ -233,7 +266,8 @@ function useChatMessages() {
                 }
 
 
-                previousScrollRef.current = previousScroll;
+                previousScrollRef.current =
+                    previousScroll;
 
 
                 return [
@@ -247,7 +281,9 @@ function useChatMessages() {
             });
 
 
-            if (olderMessages.length < PAGE_SIZE) {
+            if (
+                olderMessages.length < PAGE_SIZE
+            ) {
 
                 setHasMoreMessages(false);
 
@@ -255,10 +291,16 @@ function useChatMessages() {
 
         } catch (error) {
 
-            console.error("Ошибка загрузки старых сообщений:", error);
+            console.error(
+                "Ошибка загрузки старых сообщений:",
+                error
+            );
 
 
-            setError(error.response?.data?.message || "Не удалось загрузить старые сообщения");
+            setError(
+                error.response?.data?.message ||
+                "Не удалось загрузить старые сообщения"
+            );
 
         } finally {
 
@@ -277,7 +319,8 @@ function useChatMessages() {
 
     const handleMessagesScroll = () => {
 
-        const container = messagesContainerRef.current;
+        const container =
+            messagesContainerRef.current;
 
 
         if (!container) {
@@ -288,7 +331,11 @@ function useChatMessages() {
         checkIfNearBottom();
 
 
-        if (container.scrollTop <= 100 && !loadingOlderMessagesRef.current && hasMoreMessages) {
+        if (
+            container.scrollTop <= 100 &&
+            !loadingOlderMessagesRef.current &&
+            hasMoreMessages
+        ) {
 
             loadOlderMessages();
 
@@ -303,7 +350,8 @@ function useChatMessages() {
 
     useLayoutEffect(() => {
 
-        const container = messagesContainerRef.current;
+        const container =
+            messagesContainerRef.current;
 
 
         if (!container) {
@@ -320,15 +368,20 @@ function useChatMessages() {
         }
 
 
-        const previousScroll = previousScrollRef.current;
+        const previousScroll =
+            previousScrollRef.current;
 
 
         if (previousScroll) {
 
-            const heightDifference = container.scrollHeight - previousScroll.height;
+            const heightDifference =
+                container.scrollHeight -
+                previousScroll.height;
 
 
-            container.scrollTop = previousScroll.top + heightDifference;
+            container.scrollTop =
+                previousScroll.top +
+                heightDifference;
 
 
             previousScrollRef.current = null;
@@ -338,16 +391,21 @@ function useChatMessages() {
         }
 
 
-        if (!loadingMessages && isOpeningChatRef.current) {
+        if (
+            !loadingMessages &&
+            isOpeningChatRef.current
+        ) {
 
             requestAnimationFrame(() => {
 
-                container.scrollTop = container.scrollHeight;
+                container.scrollTop =
+                    container.scrollHeight;
 
 
                 requestAnimationFrame(() => {
 
-                    container.scrollTop = container.scrollHeight;
+                    container.scrollTop =
+                        container.scrollHeight;
 
 
                     isOpeningChatRef.current = false;
@@ -362,11 +420,15 @@ function useChatMessages() {
         }
 
 
-        if (!loadingMessages && shouldScrollToBottomRef.current) {
+        if (
+            !loadingMessages &&
+            shouldScrollToBottomRef.current
+        ) {
 
             requestAnimationFrame(() => {
 
-                container.scrollTop = container.scrollHeight;
+                container.scrollTop =
+                    container.scrollHeight;
 
             });
 
@@ -386,7 +448,12 @@ function useChatMessages() {
 
         setMessages(previous => {
 
-            const exists = previous.some(item => item.id === message.id);
+            const exists =
+                previous.some(
+                    item =>
+                        Number(item.id) ===
+                        Number(message.id)
+                );
 
 
             if (exists) {
@@ -410,24 +477,55 @@ function useChatMessages() {
 // =====================================================
 // MARK MESSAGE AS READ
 // =====================================================
+//
+// messageId здесь является lastReadMessageId.
+//
+// Это означает:
+//
+// все сообщения с id <= messageId
+// считаются прочитанными.
+//
 
     const markMessageAsRead = messageId => {
 
+        if (!messageId) {
+            return;
+        }
+
+
+        const lastReadMessageId =
+            Number(messageId);
+
+
         setMessages(previous =>
 
-            previous.map(message =>
+            previous.map(message => {
 
-                Number(message.id) === Number(messageId)
+                const currentMessageId =
+                    Number(message.id);
 
-                    ? {
+
+                if (
+                    currentMessageId <=
+                    lastReadMessageId
+                ) {
+
+                    return {
 
                         ...message,
 
                         read: true
 
-                    }
+                    };
 
-                    : message));
+                }
+
+
+                return message;
+
+            })
+
+        );
 
     };
 
@@ -439,7 +537,6 @@ function useChatMessages() {
     const closeMessages = () => {
 
         selectedChatRef.current = null;
-
 
         setMessages([]);
 

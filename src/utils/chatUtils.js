@@ -1,6 +1,21 @@
-// =====================================================
-// GET OTHER USERNAME
-// =====================================================
+export const getOtherMember = (chat, currentUsername) => {
+
+    if (!chat?.members?.length) {
+        return null;
+    }
+
+    const normalizedCurrent = currentUsername
+        ?.trim()
+        .toLowerCase();
+
+    if (!normalizedCurrent) {
+        return chat.members[0] || null;
+    }
+
+    return chat.members.find(member => member?.username
+        ?.trim()
+        .toLowerCase() !== normalizedCurrent) || null;
+};
 
 export const getOtherUsername = (chat, currentUsername) => {
 
@@ -8,46 +23,14 @@ export const getOtherUsername = (chat, currentUsername) => {
         return null;
     }
 
-
-    const user1 = chat.user1Username?.trim();
-
-    const user2 = chat.user2Username?.trim();
-
-
-    if (!currentUsername) {
-
-        return user1 || user2 || null;
-
+    if (chat.type === "GROUP") {
+        return chat.name?.trim() || "Группа";
     }
 
+    const otherMember = getOtherMember(chat, currentUsername);
 
-    const normalizedCurrent = currentUsername
-        .trim()
-        .toLowerCase();
-
-
-    if (user1 && user1.toLowerCase() === normalizedCurrent) {
-
-        return user2 || null;
-
-    }
-
-
-    if (user2 && user2.toLowerCase() === normalizedCurrent) {
-
-        return user1 || null;
-
-    }
-
-
-    return user1 || user2 || null;
-
+    return otherMember?.username?.trim() || null;
 };
-
-
-// =====================================================
-// GET OTHER AVATAR
-// =====================================================
 
 export const getOtherAvatar = (chat, currentUsername) => {
 
@@ -55,58 +38,40 @@ export const getOtherAvatar = (chat, currentUsername) => {
         return null;
     }
 
-
-    const user1 = chat.user1Username?.trim();
-
-    const user2 = chat.user2Username?.trim();
-
-
-    if (!currentUsername) {
-
-        return (chat.user1Avatar || chat.user2Avatar || null);
-
+    if (chat.type === "GROUP") {
+        return chat.avatar || null;
     }
 
+    const otherMember = getOtherMember(chat, currentUsername);
 
-    const normalizedCurrent = currentUsername
-        .trim()
-        .toLowerCase();
-
-
-    // =============================================
-    // CURRENT USER = USER 1
-    // =============================================
-
-    if (user1 && user1.toLowerCase() === normalizedCurrent) {
-
-        return chat.user2Avatar || null;
-
-    }
-
-
-    // =============================================
-    // CURRENT USER = USER 2
-    // =============================================
-
-    if (user2 && user2.toLowerCase() === normalizedCurrent) {
-
-        return chat.user1Avatar || null;
-
-    }
-
-
-    // =============================================
-    // FALLBACK
-    // =============================================
-
-    return (chat.user1Avatar || chat.user2Avatar || null);
-
+    return otherMember?.avatar || null;
 };
 
+export const getChatDisplayName = (chat, currentUsername) => {
 
-// =====================================================
-// CHECK MESSAGE BELONGS TO CHAT
-// =====================================================
+    if (!chat) {
+        return "";
+    }
+
+    if (chat.type === "GROUP") {
+        return chat.name?.trim() || "Группа";
+    }
+
+    return getOtherUsername(chat, currentUsername) || "Неизвестный пользователь";
+};
+
+export const getChatAvatar = (chat, currentUsername) => {
+
+    if (!chat) {
+        return null;
+    }
+
+    if (chat.type === "GROUP") {
+        return chat.avatar || null;
+    }
+
+    return getOtherAvatar(chat, currentUsername);
+};
 
 export const messageBelongsToChat = (message, chat) => {
 
@@ -114,57 +79,63 @@ export const messageBelongsToChat = (message, chat) => {
         return false;
     }
 
-
-    // =============================================
-    // CHECK BY CHAT ID
-    // =============================================
-
-    if (message.chatRoomId != null && chat.id != null) {
-
-        return (Number(message.chatRoomId) === Number(chat.id));
-
-    }
-
-
-    if (message.chatId != null && chat.id != null) {
-
-        return (Number(message.chatId) === Number(chat.id));
-
-    }
-
-
-    // =============================================
-    // CHECK BY USERS
-    // =============================================
-
-    const sender = message.senderUsername;
-
-    const recipient = message.recipientUsername;
-
-
-    if (!sender || !recipient) {
+    if (message.chatId == null || chat.id == null) {
         return false;
     }
 
+    return Number(message.chatId) === Number(chat.id);
+};
 
-    const user1 = chat.user1Username;
+export const formatTime = date => {
 
-    const user2 = chat.user2Username;
-
-
-    if (!user1 || !user2) {
-        return false;
+    if (!date) {
+        return "";
     }
 
+    const parsed = new Date(date);
 
-    return (
+    if (Number.isNaN(parsed.getTime())) {
+        return "";
+    }
 
-        (sender === user1 && recipient === user2)
+    return parsed.toLocaleTimeString("ru-RU", {
+        hour: "2-digit", minute: "2-digit"
+    });
+};
 
-        ||
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-        (sender === user2 && recipient === user1)
+export const getAvatarUrl = avatar => {
 
-    );
+    if (!avatar || typeof avatar !== "string") {
+        return null;
+    }
 
+    const value = avatar.trim();
+
+    if (!value) {
+        return null;
+    }
+
+    if (value.startsWith("http://") || value.startsWith("https://")) {
+        return value;
+    }
+
+    if (value.startsWith("/")) {
+        return `${API_URL}${value}`;
+    }
+
+    return `${API_URL}/${value}`;
+};
+
+export const getAvatarLetter = username => {
+
+    if (!username) {
+        return "?";
+    }
+
+    return username
+        .trim()
+        .charAt(0)
+        .toUpperCase();
 };

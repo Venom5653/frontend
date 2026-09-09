@@ -1,15 +1,22 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
+
+import {
+    getChatDisplayName,
+    getChatAvatar,
+    getAvatarUrl,
+    getAvatarLetter,
+    formatTime
+} from "../../utils/chatUtils.js";
 
 import "./ChatItem.css";
 
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-
 const ChatItem = ({
-                      chat, currentUsername, selected, onClick
+                      chat,
+                      currentUsername,
+                      selected,
+                      onClick
                   }) => {
-
 
     // =====================================================
     // STATE
@@ -19,107 +26,25 @@ const ChatItem = ({
 
 
     // =====================================================
+    // CHAT DISPLAY DATA
+    // =====================================================
+
+    const chatName = getChatDisplayName(chat, currentUsername);
+
+    const avatar = getChatAvatar(chat, currentUsername);
+
+    const avatarUrl = getAvatarUrl(avatar);
+
+    const avatarLetter = getAvatarLetter(chatName);
+
+
+    // =====================================================
     // RESET AVATAR ERROR
     // =====================================================
 
     useEffect(() => {
-
         setAvatarError(false);
-
-    }, [chat.id, chat.user1Avatar, chat.user2Avatar]);
-
-
-    // =====================================================
-    // USERS
-    // =====================================================
-
-    const user1 = chat.user1Username?.trim();
-
-    const user2 = chat.user2Username?.trim();
-
-
-    const normalizedCurrent = currentUsername?.trim().toLowerCase();
-
-
-    const isUser1 = user1 && normalizedCurrent && user1.toLowerCase() === normalizedCurrent;
-
-
-    const otherUsername = isUser1 ? user2 : user1;
-
-
-    // =====================================================
-    // AVATAR
-    // =====================================================
-
-    const avatar = isUser1 ? chat.user2Avatar : chat.user1Avatar;
-
-
-    const getAvatarUrl = (value) => {
-
-        if (!value || typeof value !== "string") {
-            return null;
-        }
-
-
-        const trimmed = value.trim();
-
-
-        if (!trimmed) {
-            return null;
-        }
-
-
-        // Полный URL
-
-        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-
-            return trimmed;
-        }
-
-
-        // Относительный путь
-
-        if (trimmed.startsWith("/")) {
-
-            return `${API_URL}${trimmed}`;
-        }
-
-
-        return `${API_URL}/${trimmed}`;
-    };
-
-
-    const avatarUrl = getAvatarUrl(avatar);
-
-
-    const avatarLetter = otherUsername
-        ?.charAt(0)
-        ?.toUpperCase() || "?";
-
-
-    // =====================================================
-    // TIME
-    // =====================================================
-
-    const formatTime = (date) => {
-
-        if (!date) {
-            return "";
-        }
-
-
-        const parsed = new Date(date);
-
-
-        if (Number.isNaN(parsed.getTime())) {
-            return "";
-        }
-
-
-        return parsed.toLocaleTimeString("ru-RU", {
-            hour: "2-digit", minute: "2-digit"
-        });
-    };
+    }, [chat.id, avatar]);
 
 
     // =====================================================
@@ -127,7 +52,6 @@ const ChatItem = ({
     // =====================================================
 
     const lastMessage = chat.lastMessage || "Пока нет сообщений";
-
 
     const unreadCount = Number(chat.unreadCount) || 0;
 
@@ -137,13 +61,11 @@ const ChatItem = ({
     // =====================================================
 
     return (
-
         <button
             type="button"
             className={`chat-item ${selected ? "active" : ""}`}
             onClick={onClick}
         >
-
 
             {/* =============================================
                 AVATAR
@@ -155,7 +77,7 @@ const ChatItem = ({
 
                     <img
                         src={avatarUrl}
-                        alt={otherUsername || "User"}
+                        alt={chatName || "Chat"}
                         onError={() => setAvatarError(true)}
                     />
 
@@ -176,21 +98,23 @@ const ChatItem = ({
 
             <div className="chat-info">
 
-
                 {/* HEADER */}
 
                 <div className="chat-info-header">
 
                     <div className="chat-name">
 
-                        {otherUsername || "Неизвестный пользователь"}
+                        {chatName || "Неизвестный чат"}
 
                     </div>
 
 
                     <div className="chat-time">
 
-                        {formatTime(chat.lastMessageCreatedAt)}
+                        {formatTime(
+                            chat.lastMessageCreatedAt ||
+                            chat.lastMessageAt
+                        )}
 
                     </div>
 
@@ -212,7 +136,9 @@ const ChatItem = ({
 
                         <div className="unread-badge">
 
-                            {unreadCount > 99 ? "99+" : unreadCount}
+                            {unreadCount > 99
+                                ? "99+"
+                                : unreadCount}
 
                         </div>
 
@@ -223,7 +149,6 @@ const ChatItem = ({
             </div>
 
         </button>
-
     );
 };
 

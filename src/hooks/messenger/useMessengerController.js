@@ -1,11 +1,14 @@
 import {
-    useEffect, useRef, useState
+    useEffect,
+    useRef,
+    useState
 } from "react";
 
 import {
     sendChatMessage
 } from "../../services/messenger/websocketService.js";
 
+import useGroupChat from "./useGroupChat.js";
 import useCurrentUser from "./useCurrentUser.js";
 import useChats from "./useChats.js";
 import useChatMessages from "./useChatMessages.js";
@@ -13,35 +16,24 @@ import usePresence from "./usePresence.js";
 import useMessengerWebSocket from "./useMessengerWebSocket.js";
 import useNotifications from "./useNotifications.js";
 
-import {
-    getOtherUsername
-} from "../../utils/chatUtils.js";
-
 import messengerApi from "../../api/messenger/messengerApi.js";
-
 
 
 function useMessengerController() {
 
     const {
-        currentUser, currentUsername, loadingCurrentUser
+        currentUser,
+        currentUsername,
+        loadingCurrentUser
     } = useCurrentUser();
 
 
     const [selectedChat, setSelectedChat] = useState(null);
 
-
     const selectedChatRef = useRef(null);
-
 
     const [content, setContent] = useState("");
 
-
-    /*
-     * ============================
-     * CHATS
-     * ============================
-     */
 
     const {
         chats,
@@ -50,17 +42,16 @@ function useMessengerController() {
         setError: setChatsError,
         loadChats,
         createChatRequest,
+        createGroupRequest,
         addOrUpdateChat,
         updateChatAfterMessage,
-        markChatAsRead
-    } = useChats(currentUsername);
+        markChatAsRead,
+        removeChat
+    } = useChats(
+        currentUsername,
+        currentUser?.id
+    );
 
-
-    /*
-     * ============================
-     * MESSAGES
-     * ============================
-     */
 
     const {
         messages,
@@ -78,22 +69,10 @@ function useMessengerController() {
     } = useChatMessages();
 
 
-    /*
-     * ============================
-     * PRESENCE
-     * ============================
-     */
-
     const {
         onlineUsers
     } = usePresence(currentUsername);
 
-
-    /*
-     * ============================
-     * NOTIFICATIONS
-     * ============================
-     */
 
     const {
         notifications,
@@ -106,27 +85,36 @@ function useMessengerController() {
     } = useNotifications(currentUsername);
 
 
-    /*
-     * ============================
-     * SELECTED CHAT REFS
-     * ============================
-     */
+    const {
+        updateGroup,
+        uploadAvatar,
+        deleteAvatar,
+        addMember,
+        removeMember,
+        changeRole,
+        transferOwnership,
+        leaveGroup,
+        deleteGroup
+    } = useGroupChat({
+        selectedChat,
+        setSelectedChat,
+        addOrUpdateChat,
+        removeChat,
+        currentUserId: currentUser?.id
+    });
+
 
     useEffect(() => {
 
         selectedChatRef.current = selectedChat;
 
-
         messagesSelectedChatRef.current = selectedChat;
 
-    }, [selectedChat, messagesSelectedChatRef]);
+    }, [
+        selectedChat,
+        messagesSelectedChatRef
+    ]);
 
-
-    /*
-     * ============================
-     * MESSENGER WEBSOCKET
-     * ============================
-     */
 
     useMessengerWebSocket({
         currentUsername,
@@ -140,12 +128,6 @@ function useMessengerController() {
         loadChats
     });
 
-
-    /*
-     * ============================
-     * SELECT CHAT
-     * ============================
-     */
 
     const selectChat = async chat => {
 
@@ -161,69 +143,46 @@ function useMessengerController() {
 
         setSelectedChat(chat);
 
-
         selectedChatRef.current = chat;
-
 
         messagesSelectedChatRef.current = chat;
 
 
-        /*
-         * Загружаем сообщения.
-         */
         await loadChatMessages(chat);
 
 
-        /*
-         * Отмечаем сообщения чата
-         * прочитанными на backend.
-         */
         try {
 
             await fetchMarkChatAsRead(chat.id);
 
         } catch (error) {
 
-            console.error("Ошибка отметки чата прочитанным:", error);
+            console.error(
+                "Ошибка отметки чата прочитанным:",
+                error
+            );
+
         }
 
 
-        /*
-         * Обновляем состояние чатов.
-         */
         markChatAsRead(chat.id);
 
 
-        /*
-         * ========================================
-         * УДАЛЯЕМ УВЕДОМЛЕНИЕ ЭТОГО ЧАТА
-         * ========================================
-         *
-         * Теперь неважно, как пользователь
-         * попал в чат:
-         *
-         * - нажал на уведомление;
-         * - нажал на чат в списке;
-         * - открыл чат другим способом.
-         *
-         * Уведомление этого чата исчезает.
-         */
         try {
 
             await deleteNotificationByChatId(chat.id);
 
         } catch (error) {
 
-            console.error("Ошибка удаления уведомления чата:", error);
+            console.error(
+                "Ошибка удаления уведомления чата:",
+                error
+            );
+
         }
+
     };
 
-
-    /*
-     * ============================
-     * OPEN CHAT BY ID
-     * ============================
-     */
 
     const openChatById = async chatId => {
 
@@ -232,26 +191,25 @@ function useMessengerController() {
         }
 
 
-        const chat = chats.find(item => Number(item.id) === Number(chatId));
+        const chat = chats.find(
+            item =>
+                Number(item.id) === Number(chatId)
+        );
 
 
-        /*
-         * Чат уже есть в списке.
-         */
         if (chat) {
 
             await selectChat(chat);
 
             return;
+
         }
 
 
-        /*
-         * Чат не найден.
-         *
-         * Обновляем список.
-         */
-        console.warn("Чат для уведомления не найден:", chatId);
+        console.warn(
+            "Чат для уведомления не найден:",
+            chatId
+        );
 
 
         try {
@@ -260,44 +218,73 @@ function useMessengerController() {
 
         } catch (error) {
 
-            console.error("Ошибка обновления чатов:", error);
+            console.error(
+                "Ошибка обновления чатов:",
+                error
+            );
 
             return;
+
         }
 
 
-        const updatedChats = chatsRef.current || [];
+        const updatedChats =
+            chatsRef.current || [];
 
 
-        const updatedChat = updatedChats.find(item => Number(item.id) === Number(chatId));
+        const updatedChat = updatedChats.find(
+            item =>
+                Number(item.id) === Number(chatId)
+        );
 
 
         if (!updatedChat) {
 
-            console.warn("Чат всё ещё не найден:", chatId);
+            console.warn(
+                "Чат всё ещё не найден:",
+                chatId
+            );
 
             return;
+
         }
 
 
         await selectChat(updatedChat);
+
     };
 
 
-    const fetchMarkChatAsRead = async (chatId) => {
+    const fetchMarkChatAsRead = async chatId => {
+
         if (!chatId) {
-            console.error("Невозможно отметить чат прочитанным: chatId отсутствует");
+
+            console.error(
+                "Невозможно отметить чат прочитанным: chatId отсутствует"
+            );
+
             return;
+
         }
 
-        const url = `/api/messages/chat/${chatId}/read`;
 
-        console.log("MARK CHAT AS READ:", {
-            chatId, url
-        });
+        const url =
+            `/api/messages/chat/${chatId}/read`;
+
+
+        console.log(
+            "MARK CHAT AS READ:",
+            {
+                chatId,
+                url
+            }
+        );
+
 
         await messengerApi.put(url);
+
     };
+
 
     const createChat = async username => {
 
@@ -309,11 +296,18 @@ function useMessengerController() {
         }
 
 
-        if (currentUsername && target.toLowerCase() === currentUsername.toLowerCase()) {
+        if (
+            currentUsername &&
+            target.toLowerCase() ===
+            currentUsername.toLowerCase()
+        ) {
 
-            setChatsError("Нельзя создать чат с самим собой");
+            setChatsError(
+                "Нельзя создать чат с самим собой"
+            );
 
             return;
+
         }
 
 
@@ -322,7 +316,8 @@ function useMessengerController() {
             setChatsError("");
 
 
-            const newChat = await createChatRequest(target);
+            const newChat =
+                await createChatRequest(target);
 
 
             addOrUpdateChat(newChat);
@@ -332,43 +327,99 @@ function useMessengerController() {
 
         } catch (error) {
 
-            console.error("Ошибка создания чата:", error);
+            console.error(
+                "Ошибка создания чата:",
+                error
+            );
 
 
-            setChatsError(error.response?.data?.message || "Не удалось создать чат");
+            setChatsError(
+                error.response?.data?.message ||
+                "Не удалось создать чат"
+            );
+
         }
+
     };
 
 
-    /*
-     * ============================
-     * CLOSE CHAT
-     * ============================
-     */
+    const createGroup = async (name, userIds) => {
+
+        const groupName = name?.trim();
+
+
+        if (!groupName) {
+            return;
+        }
+
+
+        if (
+            !Array.isArray(userIds) ||
+            userIds.length === 0
+        ) {
+
+            setChatsError(
+                "Добавьте хотя бы одного участника"
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            setChatsError("");
+
+
+            const newGroup =
+                await createGroupRequest(
+                    groupName,
+                    userIds
+                );
+
+
+            addOrUpdateChat(newGroup);
+
+
+            await selectChat(newGroup);
+
+            return true;
+
+        } catch (error) {
+
+            console.error(
+                "Ошибка создания группы:",
+                error
+            );
+
+
+            setChatsError(
+                error.response?.data?.message ||
+                "Не удалось создать группу"
+            );
+
+            return false;
+
+        }
+
+    };
+
 
     const closeChat = () => {
 
         setSelectedChat(null);
 
-
         selectedChatRef.current = null;
-
 
         messagesSelectedChatRef.current = null;
 
-
         setContent("");
 
-
         closeMessages();
+
     };
 
-
-    /*
-     * ============================
-     * SEND MESSAGE
-     * ============================
-     */
 
     const sendMessage = () => {
 
@@ -376,53 +427,38 @@ function useMessengerController() {
 
 
         if (!text || !selectedChat) {
-
             return;
         }
 
 
-        const recipient = getOtherUsername(selectedChat, currentUsername);
-
-
-        if (!recipient) {
-
-            setMessagesError("Не удалось определить получателя");
-
-            return;
-        }
-
-
-        const success = sendChatMessage(recipient, text);
+        const success =
+            sendChatMessage(
+                selectedChat.id,
+                text
+            );
 
 
         if (!success) {
 
-            setMessagesError("WebSocket не подключен");
+            setMessagesError(
+                "WebSocket не подключен"
+            );
 
             return;
+
         }
 
 
         setContent("");
 
         setMessagesError("");
+
     };
 
 
-    /*
-     * ============================
-     * ERROR
-     * ============================
-     */
+    const error =
+        messagesError || chatsError;
 
-    const error = messagesError || chatsError;
-
-
-    /*
-     * ============================
-     * RETURN
-     * ============================
-     */
 
     return {
 
@@ -472,12 +508,34 @@ function useMessengerController() {
 
         createChat,
 
+        createGroup,
+
         closeChat,
 
         sendMessage,
 
-        handleMessagesScroll
+        handleMessagesScroll,
+
+        updateGroup,
+
+        uploadAvatar,
+
+        deleteAvatar,
+
+        addMember,
+
+        removeMember,
+
+        changeRole,
+
+        transferOwnership,
+
+        leaveGroup,
+
+        deleteGroup
+
     };
+
 }
 
 

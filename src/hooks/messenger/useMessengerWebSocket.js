@@ -41,9 +41,9 @@ function useMessengerWebSocket({
                                }) {
 
 
-// =====================================================
-// WEBSOCKET CONNECTION
-// =====================================================
+    // =====================================================
+    // MESSAGE HANDLER
+    // =====================================================
 
     useEffect(() => {
 
@@ -52,119 +52,226 @@ function useMessengerWebSocket({
         }
 
 
-        const token = localStorage.getItem("token");
+        const messageHandler = async message => {
 
-
-        if (!token) {
-
-            console.warn("JWT token отсутствует");
-
-            return;
-
-        }
-
-
-        connectWebSocket(token, async () => {
-
-
-            // =====================================
-            // RESTORE ACTIVE CHAT AFTER CONNECTION
-            // =====================================
-
-            if (selectedChatRef.current?.id) {
-
-                openChat(selectedChatRef.current.id);
-
+            if (!message) {
+                return;
             }
 
 
-            // =====================================
-            // NEW MESSAGE
-            // =====================================
-
-            subscribeToMessages(async message => {
-
-                const currentChats = chatsRef.current;
+            const currentChats =
+                chatsRef.current || [];
 
 
-                const currentChat = selectedChatRef.current;
+            const currentChat =
+                selectedChatRef.current;
 
 
-                const messageChat = currentChats.find(chat => messageBelongsToChat(message, chat));
+            // =============================================
+            // MESSAGE CHAT
+            // =============================================
+
+            const messageChat =
+                currentChats.find(chat =>
+                    messageBelongsToChat(
+                        message,
+                        chat
+                    )
+                );
 
 
-                const isCurrentChat = currentChat && messageBelongsToChat(message, currentChat);
+            // =============================================
+            // CURRENT CHAT
+            // =============================================
+
+            const isCurrentChat =
+                Boolean(
+                    currentChat &&
+                    messageBelongsToChat(
+                        message,
+                        currentChat
+                    )
+                );
 
 
-                const isOwn = message.senderUsername && currentUsername && message.senderUsername
-                    .toLowerCase() === currentUsername
-                    .toLowerCase();
+            // =============================================
+            // OWN MESSAGE
+            // =============================================
+
+            const isOwn =
+                Boolean(
+                    message.senderUsername &&
+                    currentUsername &&
+                    message.senderUsername
+                        .trim()
+                        .toLowerCase() ===
+                    currentUsername
+                        .trim()
+                        .toLowerCase()
+                );
 
 
-                // =============================
-                // CURRENT CHAT
-                // =============================
+            // =============================================
+            // CHAT ID
+            // =============================================
 
-                if (isCurrentChat) {
+            const chatId =
+                message.chatId;
 
-                    addMessage(message);
+
+            if (!chatId) {
+
+                console.warn(
+                    "Получено сообщение без chatId:",
+                    message
+                );
+
+                return;
+            }
 
 
-                    const chatId = message.chatId || message.chatRoomId || currentChat.id;
+            // =============================================
+            // CURRENT CHAT
+            // =============================================
 
+            if (isCurrentChat) {
+
+                addMessage(message);
+
+
+                // -----------------------------------------
+                // НЕ ОТМЕЧАЕМ СВОЁ СООБЩЕНИЕ КАК ПРОЧИТАННОЕ
+                // -----------------------------------------
+
+                if (!isOwn) {
 
                     try {
 
-                        await messengerApi.put(`/api/messages/chat/${chatId}/read`);
+                        await messengerApi.put(
+                            `/api/messages/chat/${chatId}/read`
+                        );
 
 
                         markChatAsRead(chatId);
 
                     } catch (error) {
 
-                        console.error("Ошибка отметки сообщений прочитанными:", error);
+                        console.error(
+                            "Ошибка отметки сообщений прочитанными:",
+                            error
+                        );
 
                     }
 
                 }
 
-
-                // =============================
-                // CHAT LIST
-                // =============================
-
-                if (messageChat) {
-
-                    const unread = Number(messageChat.unreadCount || 0);
+            }
 
 
-                    updateChatAfterMessage(messageChat.id, message, isCurrentChat || isOwn ? 0 : unread + 1);
+            // =============================================
+            // CHAT LIST
+            // =============================================
 
-                } else {
+            if (messageChat) {
 
-                    await loadChats();
+                const unread =
+                    Number(
+                        messageChat.unreadCount || 0
+                    );
 
-                }
 
-            });
+                const nextUnread =
+                    isCurrentChat || isOwn
+                        ? 0
+                        : unread + 1;
 
 
-            // =====================================
-            // READ EVENTS
-            // =====================================
+                updateChatAfterMessage(
+                    messageChat.id,
+                    message,
+                    nextUnread
+                );
 
-            subscribeToReadEvents(event => {
+            } else {
 
-                markMessageAsRead(event.messageId);
+                await loadChats();
 
-            });
+            }
+
+        };
+
+
+        // =================================================
+        // READ HANDLER
+        // =================================================
+
+        const readHandler = event => {
+
+            console.log(
+                "MESSAGE READ EVENT:",
+                event
+            );
+
+
+            if (!event?.messageId) {
+                return;
+            }
+
+
+            // event.messageId =
+            // последний прочитанный message ID
+
+            markMessageAsRead(
+                event.messageId
+            );
+
+        };
+
+
+        // =================================================
+        // REGISTER HANDLERS
+        // =================================================
+
+        subscribeToMessages(messageHandler);
+
+        subscribeToReadEvents(readHandler);
+
+
+        // =================================================
+        // CONNECT
+        // =================================================
+
+        const token =
+            localStorage.getItem("token");
+
+
+        if (!token) {
+
+            console.warn(
+                "JWT token отсутствует"
+            );
+
+            return;
+
+        }
+
+
+        connectWebSocket(token, () => {
+
+            if (selectedChatRef.current?.id) {
+
+                openChat(
+                    selectedChatRef.current.id
+                );
+
+            }
 
         });
 
 
-        // =====================================
-        // CLEANUP CONNECTION
-        // =====================================
+        // =================================================
+        // CLEANUP
+        // =================================================
 
         return () => {
 
@@ -177,9 +284,9 @@ function useMessengerWebSocket({
     }, [currentUsername]);
 
 
-// =====================================================
-// ACTIVE CHAT
-// =====================================================
+    // =====================================================
+    // ACTIVE CHAT
+    // =====================================================
 
     useEffect(() => {
 
@@ -192,7 +299,9 @@ function useMessengerWebSocket({
         }
 
 
-        openChat(selectedChat.id);
+        openChat(
+            selectedChat.id
+        );
 
 
         return () => {

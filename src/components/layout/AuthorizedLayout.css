@@ -1,58 +1,34 @@
-/* =====================================================
-   LAYOUT
-   ===================================================== */
-
 .authorized-layout {
     position: relative;
-
     width: 100%;
     min-height: 100vh;
 }
-
 
 .authorized-content {
     width: 100%;
     min-height: 100vh;
 }
 
-
-/* =====================================================
-   NAVIGATION BUTTON
-   ===================================================== */
-
 .navigation-open-button {
     position: fixed;
-
-    top: 18px;
-    left: 18px;
-
-    width: 44px;
-    height: 44px;
-
+    top: 16px;
+    left: 16px;
+    width: 42px;
+    height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border: 1px solid #38264c;
-
-    border-radius: 11px;
-
-    background: rgba(25, 18, 36, 0.94);
-
-    color: #d8cce1;
-
-    font-size: 21px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    background: rgba(20, 16, 27, 0.92);
+    color: #a99eb2;
+    font-size: 20px;
     line-height: 1;
-
     cursor: pointer;
-
     z-index: 9990;
-
     box-shadow:
-            0 6px 20px rgba(0, 0, 0, 0.3);
-
-    backdrop-filter: blur(8px);
-
+            0 8px 24px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(14px);
     transition:
             background 0.18s ease,
             border-color 0.18s ease,
@@ -61,57 +37,36 @@
             box-shadow 0.18s ease;
 }
 
-
 .navigation-open-button:hover {
-    background: #30203f;
-
-    border-color: #5a397a;
-
+    background: #211a29;
+    border-color: rgba(139, 92, 246, 0.25);
     color: #ffffff;
-
     transform: translateY(-1px);
-
     box-shadow:
-            0 8px 25px rgba(0, 0, 0, 0.4),
-            0 0 15px rgba(124, 58, 237, 0.12);
+            0 9px 26px rgba(0, 0, 0, 0.36);
 }
-
 
 .navigation-open-button:active {
-    transform: scale(0.96);
+    transform: scale(0.95);
 }
-
 
 .navigation-open-button:focus-visible {
-    outline: 2px solid #9b6cff;
-
-    outline-offset: 3px;
+    outline: none;
+    border-color: #7140d0;
+    box-shadow:
+            0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
-
-/* =====================================================
-   MOBILE
-   ===================================================== */
-
 @media (max-width: 600px) {
-
     .navigation-open-button {
-        top: 12px;
-        left: 12px;
-
-        width: 42px;
-        height: 42px;
+        top: 11px;
+        left: 11px;
+        width: 41px;
+        height: 41px;
     }
-
-
-    /*
-       Скрываем кнопку меню только тогда,
-       когда на мобильном открыт конкретный чат.
-    */
 
     .authorized-layout.mobile-chat-is-open
     .navigation-open-button {
         display: none;
     }
-
 }
