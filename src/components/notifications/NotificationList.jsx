@@ -2,177 +2,102 @@ function NotificationList({
                               notifications, unreadCount, onNotificationClick, onDeleteAll
                           }) {
 
-    return (
+    const safeNotifications = Array.isArray(notifications) ? notifications : [];
 
-        <div className="notification-dropdown">
+    const safeUnreadCount = Number.isFinite(Number(unreadCount)) ? Number(unreadCount) : 0;
 
-
-            {/* =========================================
-                HEADER
-            ========================================= */}
+    return (<div className="notification-dropdown">
 
             <div className="notification-header">
-
 
                 <div className="notification-title">
 
                     Уведомления
 
-
-                    {unreadCount > 0 && (
-
-                        <span className="notification-header-count">
-
-                            {unreadCount}
-
-                        </span>
-
-                    )}
+                    {safeUnreadCount > 0 && (<span className="notification-header-count">
+                            {safeUnreadCount}
+                        </span>)}
 
                 </div>
 
-
-                {notifications.length > 0 && (
-
-                    <button
-
+                {safeNotifications.length > 0 && (<button
                         type="button"
-
                         className="notification-read-all"
-
                         onClick={onDeleteAll}
-
                     >
                         Очистить все
-
-                    </button>
-
-                )}
+                    </button>)}
 
             </div>
-
-
-            {/* =========================================
-                CONTENT
-            ========================================= */}
 
             <div className="notification-content">
 
-
-                {notifications.length === 0 && (
-
-                    <div className="notification-empty">
+                {safeNotifications.length === 0 && (<div className="notification-empty">
 
                         <div className="notification-empty-icon">
-
                             🔔
-
                         </div>
 
                         <div>
-
                             Нет уведомлений
-
                         </div>
 
-                    </div>
+                    </div>)}
 
-                )}
+                {safeNotifications.length > 0 && (<div className="notification-items">
 
+                        {safeNotifications.map(notification => {
 
-                {notifications.length > 0 && (
+                            if (!notification) {
+                                return null;
+                            }
 
-                    <div className="notification-items">
+                            const isGroup = Boolean(notification.chatName);
 
-                        {notifications.map(notification => (
+                            return (<button
+                                    type="button"
+                                    key={`${notification.id}-${notification.chatId}`}
+                                    className={`notification-item ${notification.read ? "read" : "unread"}`}
+                                    onClick={() => onNotificationClick(notification)}
+                                >
 
-                            <button
+                                    <div className="notification-item-icon">
+                                        {isGroup ? "👥" : "💬"}
+                                    </div>
 
-                                type="button"
+                                    <div className="notification-item-body">
 
-                                key={notification.id}
-
-                                className={`notification-item ${notification.read ? "read" : "unread"}`}
-
-                                onClick={() => onNotificationClick(notification)}
-
-                            >
-
-
-                                {/* =================================
-                                        ICON
-                                    ================================= */}
-
-                                <div className="notification-item-icon">
-
-                                    💬
-
-                                </div>
-
-
-                                {/* =================================
-                                        BODY
-                                    ================================= */}
-
-                                <div className="notification-item-body">
-
-
-                                    <div className="notification-item-top">
+                                        <div className="notification-item-top">
 
                                             <span className="notification-sender">
-
-                                                {notification.senderUsername}
-
+                                                {isGroup ? notification.chatName : notification.senderUsername}
                                             </span>
 
+                                            {!notification.read && (<span className="notification-unread-dot"/>)}
 
-                                        {!notification.read && (
+                                        </div>
 
-                                            <span className="notification-unread-dot"/>
+                                        <div className="notification-message">
 
-                                        )}
+                                            {isGroup ? `${notification.senderUsername}: ${notification.content || ""}` : notification.content || ""}
 
-                                    </div>
+                                        </div>
 
-
-                                    <div className="notification-message">
-
-                                        {notification.content}
-
-                                    </div>
-
-
-                                    <div className="notification-time">
-
-                                        {formatNotificationDate(notification.createdAt)}
+                                        <div className="notification-time">
+                                            {formatNotificationDate(notification.createdAt)}
+                                        </div>
 
                                     </div>
 
+                                </button>);
+                        })}
 
-                                </div>
-
-                            </button>
-
-                        ))}
-
-                    </div>
-
-                )}
+                    </div>)}
 
             </div>
 
-        </div>
-
-    );
-
+        </div>);
 }
-
-
-/*
- * =====================================================
- * DATE FORMAT
- * =====================================================
- */
 
 function formatNotificationDate(date) {
 
@@ -180,22 +105,15 @@ function formatNotificationDate(date) {
         return "";
     }
 
-
     const notificationDate = new Date(date);
 
-
     if (Number.isNaN(notificationDate.getTime())) {
-
         return "";
-
     }
-
 
     return notificationDate.toLocaleString("ru-RU", {
         day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
     });
-
 }
-
 
 export default NotificationList;

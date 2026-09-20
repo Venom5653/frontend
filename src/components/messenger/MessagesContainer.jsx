@@ -1,80 +1,44 @@
 import MessageItem from "./MessageItem.jsx";
 
-
 function MessagesContainer({
                                messages,
                                currentUsername,
                                loadingMessages,
                                loadingOlderMessages,
                                containerRef,
-                               onScroll
+                               onScroll,
+                               onDeleteMessage,
+                               isGroup,
+                               currentUserRole
                            }) {
-
     const formatTime = date => {
-
         if (!date) {
             return "";
         }
 
+        const parsed = new Date(date);
 
-        const parsed =
-            new Date(date);
-
-
-        if (
-            Number.isNaN(
-                parsed.getTime()
-            )
-        ) {
-
+        if (Number.isNaN(parsed.getTime())) {
             return "";
-
         }
 
-
-        return parsed.toLocaleTimeString(
-            "ru-RU",
-            {
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
-
+        return parsed.toLocaleTimeString("ru-RU", {
+            hour: "2-digit", minute: "2-digit"
+        });
     };
 
-
-    return (
-
-        <div
+    return (<div
             className="messages-container"
             ref={containerRef}
             onScroll={onScroll}
         >
-
-
-            {loadingOlderMessages && (
-
-                <div className="older-messages-loading">
-
+            {loadingOlderMessages && (<div className="older-messages-loading">
                     Загрузка старых сообщений...
+                </div>)}
 
-                </div>
-
-            )}
-
-
-            {loadingMessages ? (
-
-                <div className="messages-loading">
-
+            {loadingMessages ? (<div className="messages-loading">
                     Загрузка сообщений...
-
-                </div>
-
-            ) : messages.length === 0 ? (
-
-                <div className="no-messages">
-
+                </div>) : messages.length === 0 ? (<div className="no-messages">
                     <div>
                         👋
                     </div>
@@ -86,31 +50,16 @@ function MessagesContainer({
                     <span>
                         Напишите первое сообщение
                     </span>
-
-                </div>
-
-            ) : (
-
-                messages.map(message => (
-
-                    <MessageItem
+                </div>) : (messages.map(message => (<MessageItem
                         key={message.id}
                         message={message}
-                        currentUsername={
-                            currentUsername
-                        }
+                        currentUsername={currentUsername}
                         formatTime={formatTime}
-                    />
-
-                ))
-
-            )}
-
-        </div>
-
-    );
-
+                        onDeleteMessage={onDeleteMessage}
+                        isGroup={isGroup}
+                        currentUserRole={currentUserRole}
+                    />)))}
+        </div>);
 }
-
 
 export default MessagesContainer;

@@ -1,66 +1,100 @@
+import {
+    useEffect, useRef, useState
+} from "react";
+
 function MessageItem({
-                         message, currentUsername, formatTime
+                         message, currentUsername, formatTime, onDeleteMessage, isGroup, currentUserRole
                      }) {
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef(null);
 
-    const own = message.senderUsername && currentUsername && message.senderUsername
-        .trim()
-        .toLowerCase() === currentUsername
-        .trim()
-        .toLowerCase();
+    const own = message.senderUsername && currentUsername && message.senderUsername.trim().toLowerCase() === currentUsername.trim().toLowerCase();
 
+    const canDelete = own || (isGroup && (currentUserRole === "OWNER" || currentUserRole === "ADMIN"));
 
-    return (
+    useEffect(() => {
+        if (!menuOpen) {
+            return;
+        }
 
-        <div
-            className={`message-row ${own ? "own" : "other"}`}
-        >
+        const handleClickOutside = event => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setMenuOpen(false);
+            }
+        };
 
-            <div className="message-bubble">
+        document.addEventListener("mousedown", handleClickOutside);
 
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [menuOpen]);
 
-                {!own && (
+    const handleMessageClick = event => {
+        if (!canDelete) {
+            return;
+        }
 
-                    <div className="message-sender">
+        if (event.target.closest(".message-context-menu")) {
+            return;
+        }
 
+        setMenuOpen(previous => !previous);
+    };
+
+    const handleDelete = async event => {
+        event.stopPropagation();
+
+        if (!message?.id || !onDeleteMessage) {
+            return;
+        }
+
+        setMenuOpen(false);
+
+        await onDeleteMessage(message.id);
+    };
+
+    return (<div className={`message-row ${own ? "own" : "other"}`}>
+            <div
+                className={`message-bubble ${canDelete && menuOpen ? "context-menu-open" : ""}`}
+                onClick={handleMessageClick}
+                ref={canDelete ? menuRef : null}
+            >
+                {!own && (<div className="message-sender">
                         {message.senderUsername || "Пользователь"}
-
-                    </div>
-
-                )}
-
+                    </div>)}
 
                 <div className="message-content">
-
                     {message.content}
-
                 </div>
-
 
                 <div className="message-time">
-
                     {formatTime(message.createdAt)}
 
-
-                    {own && (
-
-                        <span
+                    {own && (<span
                             className={`message-read-status ${message.read ? "read" : ""}`}
                         >
-
                             {message.read ? "✓✓" : "✓"}
-
-                        </span>
-
-                    )}
-
+                        </span>)}
                 </div>
 
+                {canDelete && menuOpen && (
+                    <div
+                        className={`message-context-menu ${
+                            own ? "menu-own" : "menu-other"
+                        }`}
+                        onClick={event => event.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            onClick={handleDelete}
+                        >
+                            Удалить
+                        </button>
+                    </div>
+                )}
             </div>
-
-        </div>
-
-    );
+        </div>);
 }
-
 
 export default MessageItem;

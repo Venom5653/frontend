@@ -564,3 +564,73 @@
         min-width: 38px;
     }
 }
+
+.message-delete-button {
+    display: none;
+    margin-left: 4px;
+    padding: 2px 5px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: #a99ab5;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9px;
+    cursor: pointer;
+    transition:
+            background 0.18s ease,
+            color 0.18s ease;
+}
+
+.message-bubble {
+    position: relative;
+    overflow: visible;
+}
+
+.message-bubble {
+    position: relative;
+    overflow: visible;
+}
+
+.message-context-menu {
+    position: absolute;
+    top: 50%;
+    z-index: 1000;
+    min-width: 110px;
+    padding: 4px;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: #21152d;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    transform: translateY(-50%);
+}
+
+.message-context-menu.menu-own {
+    right: calc(100% + 8px);
+}
+
+.message-context-menu.menu-other {
+    left: calc(100% + 8px);
+}
+
+.message-context-menu button {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #ffffff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.message-context-menu button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ff8a8a;
+}
+
+.context-menu-open {
+    z-index: 50;
+}

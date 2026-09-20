@@ -1,75 +1,39 @@
 import {Client} from "@stomp/stompjs";
 
-
 let stompClient = null;
-
 let messageSubscription = null;
-
 let currentMessageHandler = null;
-
 let reconnectPromise = null;
-
 let readSubscription = null;
-
 let currentReadHandler = null;
-
 let statusSubscription = null;
-
 let currentStatusHandler = null;
-
 let notificationClient = null;
-
 let notificationSubscription = null;
-
 let currentNotificationHandler = null;
-
-
-// =====================================================
-// READ EVENTS
-// =====================================================
+let deletedSubscription = null;
+let currentDeletedHandler = null;
 
 export function subscribeToReadEvents(onRead) {
-
     currentReadHandler = onRead;
-
-
     if (!stompClient) {
-
         console.log("STOMP client ещё не создан. " + "Подписка read будет создана после подключения.");
-
         return;
     }
-
-
     if (!stompClient.connected) {
-
         console.log("STOMP client ещё не подключен.");
-
         return;
     }
-
-
     if (readSubscription) {
-
         console.log("Подписка на read уже существует");
-
         return;
     }
-
-
     readSubscription = stompClient.subscribe("/user/queue/message-read", message => {
-
         try {
-
             const event = JSON.parse(message.body);
-
-
             if (currentReadHandler) {
-
                 currentReadHandler(event);
-
             }
-
         } catch (error) {
 
             console.error("Ошибка обработки MESSAGE_READ:", error);
@@ -265,27 +229,10 @@ export function connectWebSocket(token, onConnected) {
 
             console.log("STOMP connected:", stompClient.connected);
 
-
-            // =========================================
-            // MESSAGES
-            // =========================================
-
             subscribeToMessages(currentMessageHandler);
-
-
-            // =========================================
-            // READ EVENTS
-            // =========================================
-
             subscribeToReadEvents(currentReadHandler);
-
-
-            // =========================================
-            // USER STATUS
-            // =========================================
-
             subscribeToUserStatus(currentStatusHandler);
-
+            subscribeToDeletedEvents(currentDeletedHandler);
 
             if (onConnected) {
 
@@ -471,163 +418,72 @@ export function subscribeToMessages(onMessage) {
 
     });
 }
-
-
-// =====================================================
-// SEND MESSAGE
-// =====================================================
-
 export function sendMessage(chatId, content) {
-
     return sendChatMessage(chatId, content);
 }
 
-
-// =====================================================
-// RECONNECT WEBSOCKET
-// =====================================================
-
 export async function reconnectWebSocket(newToken) {
-
     if (!newToken) {
-
         console.error("WebSocket: новый JWT отсутствует");
-
         return;
     }
-
-
     if (reconnectPromise) {
-
         console.log("WebSocket: переподключение уже выполняется");
-
         return reconnectPromise;
     }
-
-
     reconnectPromise = (async () => {
-
         console.log("WebSocket: переподключение с новым JWT");
-
-
-        // -------------------------------------------------
-        // SAVE HANDLERS
-        // -------------------------------------------------
-
         const handler = currentMessageHandler;
-
-
         const readHandler = currentReadHandler;
-
-
+        const deletedHandler = currentDeletedHandler;
         const statusHandler = currentStatusHandler;
 
-
-        // -------------------------------------------------
-        // UNSUBSCRIBE MESSAGES
-        // -------------------------------------------------
-
         if (messageSubscription) {
-
             try {
-
                 messageSubscription.unsubscribe();
-
             } catch (error) {
-
                 console.error("WebSocket: ошибка unsubscribe:", error);
-
             }
-
-
             messageSubscription = null;
-
         }
-
-
-        // -------------------------------------------------
-        // UNSUBSCRIBE READ
-        // -------------------------------------------------
-
         if (readSubscription) {
-
             try {
-
                 readSubscription.unsubscribe();
-
             } catch (error) {
-
                 console.error("WebSocket: ошибка unsubscribe read:", error);
-
             }
-
-
             readSubscription = null;
-
         }
-
-
-        // -------------------------------------------------
-        // UNSUBSCRIBE STATUS
-        // -------------------------------------------------
-
         if (statusSubscription) {
-
             try {
-
                 statusSubscription.unsubscribe();
-
             } catch (error) {
-
                 console.error("WebSocket: ошибка unsubscribe status:", error);
-
             }
-
-
             statusSubscription = null;
-
         }
 
-
-        // -------------------------------------------------
-        // DEACTIVATE CLIENT
-        // -------------------------------------------------
+        if (deletedSubscription) {
+            try {
+                deletedSubscription.unsubscribe();
+            } catch (error) {
+                console.error("WebSocket: ошибка unsubscribe delete:", error);
+            }
+            deletedSubscription = null;
+        }
 
         if (stompClient) {
-
             try {
-
                 await stompClient.deactivate();
-
             } catch (error) {
-
                 console.error("WebSocket: ошибка отключения:", error);
-
             }
-
         }
-
-
         stompClient = null;
-
-
-        // -------------------------------------------------
-        // RESTORE HANDLERS
-        // -------------------------------------------------
-
         currentMessageHandler = handler;
-
-
         currentReadHandler = readHandler;
-
-
+        currentDeletedHandler = deletedHandler;
         currentStatusHandler = statusHandler;
-
-
-        // -------------------------------------------------
-        // CONNECT WITH NEW TOKEN
-        // -------------------------------------------------
-
         connectWebSocket(newToken, () => {
 
             console.log("WebSocket: успешно переподключён");
@@ -645,16 +501,7 @@ export async function reconnectWebSocket(newToken) {
 }
 
 
-// =====================================================
-// DISCONNECT WEBSOCKET
-// =====================================================
-
 export async function disconnectWebSocket() {
-
-    // -------------------------------------------------
-    // MESSAGES
-    // -------------------------------------------------
-
     if (messageSubscription) {
 
         try {
@@ -666,72 +513,39 @@ export async function disconnectWebSocket() {
             console.error("WebSocket: ошибка unsubscribe:", error);
 
         }
-
-
         messageSubscription = null;
-
     }
-
-
-    // -------------------------------------------------
-    // READ
-    // -------------------------------------------------
-
     if (readSubscription) {
-
         try {
-
             readSubscription.unsubscribe();
-
         } catch (error) {
-
             console.error("WebSocket: ошибка unsubscribe read:", error);
-
         }
-
-
         readSubscription = null;
-
     }
-
-
-    // -------------------------------------------------
-    // STATUS
-    // -------------------------------------------------
 
     if (statusSubscription) {
-
         try {
-
             statusSubscription.unsubscribe();
-
         } catch (error) {
-
             console.error("WebSocket: ошибка unsubscribe status:", error);
-
+        }
+        statusSubscription = null;
+    }
+    if (deletedSubscription) {
+        try {
+            deletedSubscription.unsubscribe();
+        } catch (error) {
+            console.error("WebSocket: ошибка unsubscribe delete:", error);
         }
 
-
-        statusSubscription = null;
-
+        deletedSubscription = null;
     }
 
-
-    // -------------------------------------------------
-    // CLEAR HANDLERS
-    // -------------------------------------------------
-
+    currentDeletedHandler = null;
     currentMessageHandler = null;
-
     currentReadHandler = null;
-
     currentStatusHandler = null;
-
-
-    // -------------------------------------------------
-    // DEACTIVATE
-    // -------------------------------------------------
-
     if (stompClient) {
 
         try {
@@ -754,12 +568,6 @@ export async function disconnectWebSocket() {
 
     console.log("WebSocket отключен");
 }
-
-
-// =====================================================
-// OPEN CHAT
-// =====================================================
-
 export function openChat(chatId) {
 
     if (!chatId) {
@@ -768,40 +576,19 @@ export function openChat(chatId) {
 
         return false;
     }
-
-
     if (!stompClient || !stompClient.connected) {
-
         console.warn("CHAT OPEN: WebSocket не подключен");
-
         return false;
     }
-
-
     stompClient.publish({
-
         destination: "/app/chat/open",
-
-
         body: JSON.stringify({
-
             chatId: Number(chatId)
-
         })
-
     });
-
-
     console.log("CHAT OPEN:", chatId);
-
-
     return true;
 }
-
-
-// =====================================================
-// CLOSE CHAT
-// =====================================================
 
 export function closeChat() {
 
@@ -809,28 +596,13 @@ export function closeChat() {
 
         return false;
     }
-
-
     stompClient.publish({
-
         destination: "/app/chat/close",
-
-
         body: "{}"
-
     });
-
-
     console.log("CHAT CLOSE");
-
-
     return true;
 }
-
-
-// =====================================================
-// NOTIFICATION WEBSOCKET
-// =====================================================
 
 export function connectNotificationWebSocket(token, onNotification) {
 
@@ -893,6 +665,7 @@ export function connectNotificationWebSocket(token, onNotification) {
                 message => {
 
                     try {
+                        console.log("RAW NOTIFICATION WS MESSAGE:", message.body);
 
                         const notification = JSON.parse(message.body);
 
@@ -946,10 +719,35 @@ export function connectNotificationWebSocket(token, onNotification) {
     notificationClient.activate();
 }
 
-
-// =====================================================
-// DISCONNECT NOTIFICATION WEBSOCKET
-// =====================================================
+export function subscribeToDeletedEvents(onDeleted) {
+    currentDeletedHandler = onDeleted;
+    if (!stompClient) {
+        console.log("STOMP client ещё не создан. Подписка delete будет создана после подключения.");
+        return;
+    }
+    if (!stompClient.connected) {
+        console.log("STOMP client ещё не подключен.");
+        return;
+    }
+    if (deletedSubscription) {
+        console.log("Подписка на delete уже существует");
+        return;
+    }
+    deletedSubscription = stompClient.subscribe(
+        "/user/queue/message-deleted",
+        message => {
+            try {
+                const event = JSON.parse(message.body);
+                if (currentDeletedHandler) {
+                    currentDeletedHandler(event);
+                }
+            } catch (error) {
+                console.error("Ошибка обработки MESSAGE_DELETED:", error);
+            }
+        }
+    );
+    console.log("Подписка /user/queue/message-deleted создана");
+}
 
 export async function disconnectNotificationWebSocket() {
 
